@@ -1,82 +1,91 @@
-// ----- Builder math -----
+// -------- Query param: preselect base (from landing cards) --------
+function preselectFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const cc = params.get("cc"); // "198" | "212" | "224"
+  if (!cc) return;
+  const base = document.getElementById("engineBase");
+  if (!base) return;
+  for (const opt of base.options) {
+    if (opt.value === cc) { opt.selected = true; break; }
+  }
+}
+
+// -------- Builder math --------
 function updateBuild() {
-  const engineBase = document.getElementById("engineBase");
-  let basePrice = parseInt(engineBase.selectedOptions[0].dataset.price, 10);
-  let baseHp = parseInt(engineBase.selectedOptions[0].dataset.hp, 10);
+  const base = document.getElementById("engineBase");
+  if (!base) return;
 
-  let totalPrice = basePrice;
-  let totalHp = baseHp;
+  let price = parseInt(base.selectedOptions[0].dataset.price, 10);
+  let hp    = parseInt(base.selectedOptions[0].dataset.hp, 10);
 
-  document.querySelectorAll(".upgrade").forEach(up => {
-    if (up.checked) {
-      totalPrice += parseInt(up.dataset.price, 10);
-      totalHp += parseInt(up.dataset.hp, 10);
+  document.querySelectorAll(".upgrade").forEach(u => {
+    if (u.checked) {
+      price += parseInt(u.dataset.price, 10);
+      hp    += parseInt(u.dataset.hp, 10);
     }
   });
 
-  document.getElementById("totalPrice").textContent = totalPrice;
-  document.getElementById("totalHp").textContent = totalHp;
+  document.getElementById("totalPrice").textContent = price;
+  document.getElementById("totalHp").textContent = hp;
 }
 
-document.getElementById("engineBase").addEventListener("change", updateBuild);
-document.querySelectorAll(".upgrade").forEach(up =>
-  up.addEventListener("change", updateBuild)
-);
-updateBuild();
+function wireBuilder() {
+  const base = document.getElementById("engineBase");
+  if (!base) return; // not on builder page
+  base.addEventListener("change", updateBuild);
+  document.querySelectorAll(".upgrade").forEach(u => u.addEventListener("change", updateBuild));
+  preselectFromQuery();
+  updateBuild();
+}
 
-// ----- Waiver modal -----
-const modal = document.getElementById("waiverModal");
-const checkoutBtn = document.getElementById("checkoutBtn");
-const closeModal = document.getElementById("closeModal");
-const agreeBox = document.getElementById("agreeBox");
-const placeOrderBtn = document.getElementById("placeOrder");
-const downloadWaiverBtn = document.getElementById("downloadWaiver");
+// -------- Waiver modal (builder only) --------
+function wireWaiver() {
+  const modal = document.getElementById("waiverModal");
+  if (!modal) return; // not on builder page
+  const checkoutBtn = document.getElementById("checkoutBtn");
+  const closeModal  = document.getElementById("closeModal");
+  const agreeBox    = document.getElementById("agreeBox");
+  const placeOrder  = document.getElementById("placeOrder");
+  const downloadBtn = document.getElementById("downloadWaiver");
 
-checkoutBtn.addEventListener("click", () => {
-  modal.setAttribute("aria-hidden", "false");
-  agreeBox.checked = false;
-  placeOrderBtn.disabled = true;
-});
+  checkoutBtn.addEventListener("click", () => {
+    modal.setAttribute("aria-hidden", "false");
+    agreeBox.checked = false;
+    placeOrder.disabled = true;
+  });
+  closeModal.addEventListener("click", () => modal.setAttribute("aria-hidden", "true"));
+  agreeBox.addEventListener("change", () => placeOrder.disabled = !agreeBox.checked);
 
-closeModal.addEventListener("click", () => {
-  modal.setAttribute("aria-hidden", "true");
-});
+  placeOrder.addEventListener("click", () => {
+    const total = document.getElementById("totalPrice").textContent;
+    const hp = document.getElementById("totalHp").textContent;
+    alert(`Order placed!\nTotal: $${total}\nEstimated HP: ${hp}\n(Implement payment/email later.)`);
+    modal.setAttribute("aria-hidden", "true");
+  });
 
-agreeBox.addEventListener("change", () => {
-  placeOrderBtn.disabled = !agreeBox.checked;
-});
-
-// Fake checkout for now (replace with real flow later)
-placeOrderBtn.addEventListener("click", () => {
-  const total = document.getElementById("totalPrice").textContent;
-  const hp = document.getElementById("totalHp").textContent;
-  alert(`Order placed!\nTotal: $${total}\nEstimated HP: ${hp}\n(Implement payment later.)`);
-  modal.setAttribute("aria-hidden", "true");
-});
-
-// Generate a simple text waiver the user can save
-downloadWaiverBtn.addEventListener("click", () => {
-  const waiverText = `
-[Your Brand] — Racing Use Waiver & Terms
+  downloadBtn.addEventListener("click", () => {
+    const text = `
+SPX Engineering — Racing Use Waiver & Terms
 
 1) Racing/off-road use only.
 2) High-performance engines may require expert installation/tuning.
-3) No liability for damage, injury, or death from use or misuse.
+3) No liability for damage, injury, or death arising from use or misuse.
 4) Warranty void once sealed components are opened or unit is operated.
 5) Horsepower figures are estimates and may vary.
 
 Customer Name: _________________________
 Signature:     _________________________
 Date:          _________________________
-  `.trim();
+`.trim();
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement("a"), { href: url, download: "SPX-Waiver.txt" });
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+}
 
-  const blob = new Blob([waiverText], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "waiver.txt";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+// -------- Init --------
+document.addEventListener("DOMContentLoaded", () => {
+  wireBuilder();
+  wireWaiver();
 });
