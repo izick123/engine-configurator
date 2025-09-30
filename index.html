@@ -3,126 +3,63 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Custom Racing Engine Builder</title>
+  <title>SPX Engineering — Racing Engines</title>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <!-- Header / Nav -->
+  <!-- Header -->
   <header class="site-header">
     <div class="container header-inner">
-      <div class="brand">
-        <!-- TODO: rename once you pick a brand -->
-        <a href="./" class="brand-link">[Your Brand]</a>
-      </div>
+      <a href="./" class="brand-link">SPX Engineering</a>
       <nav class="nav">
-        <a href="./">Builder</a>
+        <a href="./">Home</a>
+        <a href="builder.html">Builder</a>
         <a href="faq.html">FAQ</a>
         <a href="mailto:engines@example.com">Contact</a>
       </nav>
     </div>
   </header>
 
+  <!-- Hero / Banner -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <h1>Hand-Built Racing Engines</h1>
+      <p>Dyno-tested* power, tuned for winning. Build yours in minutes.</p>
+      <a class="btn primary" href="builder.html">Start Building</a>
+      <p class="small muted mt-6">*Dyno testing optional add-on. For racing use only.</p>
+    </div>
+  </section>
+
+  <!-- Displacement Cards -->
   <main class="container">
-    <section class="builder card">
-      <h1>Custom Racing Engine Builder</h1>
-      <p>Build your engine. Select upgrades and watch stats update live.</p>
+    <section class="card-grid">
+      <a class="card click" href="builder.html?cc=198">
+        <h2>198cc</h2>
+        <p class="tag">Light &amp; Sporty</p>
+        <p>Crisp throttle and agile packages for smaller chassis.</p>
+      </a>
 
-      <h2>Choose Your Base Engine</h2>
-      <select id="engineBase">
-        <option value="198" data-price="600" data-hp="8">198cc - $600 (8hp)</option>
-        <option value="212" data-price="750" data-hp="9" selected>212cc - $750 (9hp)</option>
-        <option value="224" data-price="900" data-hp="10">224cc - $900 (10hp)</option>
-      </select>
+      <a class="card click" href="builder.html?cc=212">
+        <h2>212cc</h2>
+        <p class="tag">Versatile Power</p>
+        <p>Our most popular platform. Big upgrade path, great value.</p>
+      </a>
 
-      <h2>Upgrades</h2>
-
-      <div class="upgrades">
-        <label class="check">
-          <input type="checkbox" class="upgrade" data-price="120" data-hp="2"/>
-          Mikuni 22mm Carb (+$120, +2hp)
-        </label>
-
-        <label class="check">
-          <input type="checkbox" class="upgrade" data-price="50" data-hp="1"/>
-          High-Flow Intake (+$50, +1hp)
-        </label>
-
-        <label class="check">
-          <input type="checkbox" class="upgrade" data-price="60" data-hp="1"/>
-          Straight Pipe Header (+$60, +1hp)
-        </label>
-
-        <label class="check">
-          <input type="checkbox" class="upgrade" data-price="250" data-hp="3"/>
-          Ported Head (+$250, +3hp)
-        </label>
-
-        <label class="check">
-          <input type="checkbox" class="upgrade" data-price="600" data-hp="3"/>
-          EFI Conversion (+$600, +3hp)
-        </label>
-      </div>
-
-      <h2>Your Build</h2>
-      <div id="results" class="results">
-        <p><strong>Total Price:</strong> $<span id="totalPrice">0</span></p>
-        <p>
-          <strong>Estimated Horsepower:</strong>
-          <span id="totalHp">0</span> hp
-          <span class="hp-disclaimer">(*estimate; actual horsepower may vary)</span>
-        </p>
-      </div>
-
-      <div class="actions">
-        <button id="checkoutBtn" class="btn primary">Checkout</button>
-      </div>
+      <a class="card click" href="builder.html?cc=224">
+        <h2>224cc</h2>
+        <p class="tag">More power, more fun</p>
+        <p>Top-end punch and headroom for serious builds.</p>
+      </a>
     </section>
   </main>
 
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container footer-inner">
-      <div>
-        <strong>[Your Brand]</strong> — Hand-built, dyno-tested* racing engines.
-      </div>
-      <div class="small">
-        *Dyno testing optional add-on. Horsepower is estimated; actual horsepower may vary.
-        For racing use only. By purchasing, you agree to our waiver.
-      </div>
-      <div class="small">
-        Contact: <a href="mailto:engines@example.com">engines@example.com</a> •
-        Phone: <a href="tel:+15555550123">(555) 555-0123</a>
-      </div>
+      <div><strong>SPX Engineering</strong> — Hand-built racing engines.</div>
+      <div class="small">Horsepower is estimated; actual horsepower may vary. For racing use only.</div>
+      <div class="small">Contact: <a href="mailto:engines@example.com">engines@example.com</a> • <a href="tel:+15555550123">(555) 555-0123</a></div>
     </div>
   </footer>
-
-  <!-- Waiver Modal -->
-  <div id="waiverModal" class="modal" aria-hidden="true">
-    <div class="modal-dialog">
-      <button class="modal-close" id="closeModal" aria-label="Close">&times;</button>
-      <h3>Racing Use Waiver & Terms</h3>
-      <div class="modal-body">
-        <p><strong>READ BEFORE PURCHASE:</strong></p>
-        <ol>
-          <li>This product is intended <strong>for racing/off-road use only</strong>.</li>
-          <li>Engines are high-performance and may require expert installation and tuning.</li>
-          <li><strong>No liability</strong> for damage, injury, or death arising from use or misuse.</li>
-          <li>Once any sealed component is opened (crankcase, carb, exhaust), or unit is operated,
-              any warranty is void. Limited coverage only for manufacturing defects, if offered.</li>
-          <li>Horsepower figures are estimates and may vary based on conditions and setup.</li>
-        </ol>
-        <label class="check mt">
-          <input type="checkbox" id="agreeBox"/>
-          I have read and agree to the waiver & terms above.
-        </label>
-      </div>
-      <div class="modal-actions">
-        <button id="downloadWaiver" class="btn">Download Waiver</button>
-        <button id="placeOrder" class="btn primary" disabled>Place Order</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
 </body>
 </html>
