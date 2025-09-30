@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Engine Builder</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Custom Racing Engine Builder</h1>
+    <p>Build your dream engine. Select upgrades and watch stats update live.</p>
+  </header>
+
+  <main>
+    <section class="builder">
+      <h2>Choose Your Base Engine</h2>
+      <select id="engineBase">
+        <option value="198" data-price="600" data-hp="8">198cc - $600 (8hp)</option>
+        <option value="212" data-price="750" data-hp="9">212cc - $750 (9hp)</option>
+        <option value="224" data-price="900" data-hp="10">224cc - $900 (10hp)</option>
+      </select>
+
+      <h2>Upgrades</h2>
+      <label>
+        <input type="checkbox" class="upgrade" data-price="120" data-hp="2">
+        Mikuni 22mm Carb (+$120, +2hp)
+      </label><br>
+      <label>
+        <input type="checkbox" class="upgrade" data-price="50" data-hp="1">
+        High-Flow Intake (+$50, +1hp)
+      </label><br>
+      <label>
+        <input type="checkbox" class="upgrade" data-price="60" data-hp="1">
+        Straight Pipe Exhaust (+$60, +1hp)
+      </label><br>
+      <label>
+        <input type="checkbox" class="upgrade" data-price="250" data-hp="3">
+        Ported Head (+$250, +3hp)
+      </label><br>
+      <label>
+        <input type="checkbox" class="upgrade" data-price="600" data-hp="3">
+        EFI Conversion (+$600, +3hp)
+      </label>
+
+      <h2>Your Build</h2>
+      <div id="results">
+        <p><strong>Total Price:</strong> $<span id="totalPrice">0</span></p>
+        <p><strong>Estimated Horsepower:</strong> <span id="totalHp">0</span> hp</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>For racing use only. Questions? Email us at <a href="mailto:engines@example.com">engines@example.com</a></p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
