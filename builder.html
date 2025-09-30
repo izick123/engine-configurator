@@ -10,7 +10,9 @@
   <!-- Header -->
   <header class="site-header">
     <div class="container header-inner">
-      <a href="./" class="brand-link">SPX Engineering</a>
+      <a href="./" class="brand-link" aria-label="SPX Engineering Home">
+        <img src="logo.png" alt="SPX Engineering" class="logo">
+      </a>
       <nav class="nav">
         <a href="./">Home</a>
         <a href="builder.html" aria-current="page">Builder</a>
@@ -26,7 +28,7 @@
       <p>Select a base and choose components by section. Price &amp; estimated HP update live.</p>
 
       <h2>Base Engine</h2>
-      <select id="engineBase">
+      <select id="engineBase" aria-label="Select base engine">
         <option value="198" data-price="600" data-hp="8">198cc — $600 (8 hp)</option>
         <option value="212" data-price="750" data-hp="9">212cc — $750 (9 hp)</option>
         <option value="224" data-price="900" data-hp="10">224cc — $900 (10 hp)</option>
@@ -55,24 +57,24 @@
         <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="120" data-hp="0"> Forged Piston (+$120)</label>
         <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="100" data-hp="0"> Billet Rod (+$100)</label>
         <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="150" data-hp="0"> Billet Flywheel (+$150)</label>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="80" data-hp="3"> Aggressive Cam (+$80, +3 hp)</label>
+        <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="80"  data-hp="3"> Aggressive Cam (+$80, +3 hp)</label>
       </div>
 
       <div class="section">
         <h3>Head &amp; Valvetrain</h3>
         <label class="check"><input type="checkbox" class="upgrade" data-group="head" data-price="250" data-hp="3"> Ported Head (+$250, +3 hp)</label>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="head" data-price="35" data-hp="0"> Upgraded Springs (Single) (+$35)</label>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="head" data-price="80" data-hp="0"> Dual Valve Springs (+$80)</label>
+        <label class="check"><input type="checkbox" class="upgrade" data-group="head" data-price="35"  data-hp="0"> Upgraded Springs (Single) (+$35)</label>
+        <label class="check"><input type="checkbox" class="upgrade" data-group="head" data-price="80"  data-hp="0"> Dual Valve Springs (+$80)</label>
       </div>
 
       <div class="section">
         <h3>Special</h3>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="special" data-price="60" data-hp="0"> Ceramic-Coated Piston (+$60)</label>
+        <label class="check"><input type="checkbox" class="upgrade" data-group="special" data-price="60"  data-hp="0"> Ceramic-Coated Piston (+$60)</label>
         <label class="check"><input type="checkbox" class="upgrade" data-group="special" data-price="100" data-hp="0"> Dyno Sheet (+$100)</label>
       </div>
 
       <h2>Your Build</h2>
-      <div id="results" class="results">
+      <div id="results" class="results" aria-live="polite">
         <p><strong>Total Price:</strong> $<span id="totalPrice">0</span></p>
         <p>
           <strong>Estimated Horsepower:</strong>
@@ -96,11 +98,11 @@
     </div>
   </footer>
 
-  <!-- Waiver Modal (same as before) -->
+  <!-- Waiver Modal -->
   <div id="waiverModal" class="modal" aria-hidden="true">
     <div class="modal-dialog">
       <button class="modal-close" id="closeModal" aria-label="Close">&times;</button>
-      <h3>Racing Use Waiver & Terms</h3>
+      <h3>Racing Use Waiver &amp; Terms</h3>
       <div class="modal-body">
         <ol>
           <li>For racing/off-road use only.</li>
@@ -110,7 +112,7 @@
           <li>Horsepower figures are estimates; conditions/setup vary results.</li>
         </ol>
         <label class="check mt">
-          <input type="checkbox" id="agreeBox"/> I have read and agree to the waiver & terms above.
+          <input type="checkbox" id="agreeBox"/> I have read and agree to the waiver &amp; terms above.
         </label>
       </div>
       <div class="modal-actions">
