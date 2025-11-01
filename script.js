@@ -118,6 +118,8 @@ function wireAdmin() {
   const visitCount = document.getElementById("visitCount");
   const resetBtn = document.getElementById("resetVisits");
   const dashboardStatus = document.getElementById("adminDashboardStatus");
+  const visitPanel = document.getElementById("visitPanel");
+  const toggleVisitPanel = document.getElementById("toggleVisitPanel");
 
   function setDashboardStatus(message, isError = false) {
     if (!dashboardStatus) return;
@@ -148,9 +150,15 @@ function wireAdmin() {
       status.classList.remove("error");
       dashboard.classList.remove("hidden");
       form.classList.add("hidden");
-      showVisits();
       passField.value = "";
       setDashboardStatus("");
+      if (visitPanel) {
+        visitPanel.classList.add("hidden");
+      }
+      if (toggleVisitPanel) {
+        toggleVisitPanel.setAttribute("aria-expanded", "false");
+        toggleVisitPanel.focus();
+      }
     } else {
       status.textContent = "Invalid username or password.";
       status.classList.add("error");
@@ -173,6 +181,20 @@ function wireAdmin() {
         setDashboardStatus("Visit counter reset.");
       } catch (err) {
         setDashboardStatus("Unable to reset visit data.", true);
+      }
+    });
+  }
+
+  if (toggleVisitPanel && visitPanel) {
+    toggleVisitPanel.addEventListener("click", () => {
+      const panelHidden = visitPanel.classList.contains("hidden");
+      if (panelHidden) {
+        visitPanel.classList.remove("hidden");
+        toggleVisitPanel.setAttribute("aria-expanded", "true");
+        showVisits();
+      } else {
+        visitPanel.classList.add("hidden");
+        toggleVisitPanel.setAttribute("aria-expanded", "false");
       }
     });
   }
