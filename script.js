@@ -88,31 +88,11 @@ Date:          _________________________
 }
 
 // -------- Init --------
-const VISIT_STORAGE_KEY = "spxVisitCount";
-const VISIT_HISTORY_KEY = "spxVisitHistory";
-const ENGAGEMENT_STORAGE_KEY = "spxEngagementMetrics";
 const ADMIN_USER = "admin";
 const ADMIN_PASS = "revlimit";
-
-function readJsonStorage(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw);
-    return typeof parsed === "object" && parsed !== null ? parsed : fallback;
-  } catch (err) {
-    console.warn(`Unable to parse storage key "${key}":`, err);
-    return fallback;
-  }
-}
-
-function writeJsonStorage(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (err) {
-    console.warn(`Unable to persist storage key "${key}":`, err);
-  }
-}
+const COUNT_API_NAMESPACE = "spx_engine_configurator";
+const COUNT_API_BASE = "https://api.countapi.xyz";
+const COUNT_API_TIMEOUT = 5000;
 
 function shouldTrackVisit() {
   const body = document.body;
@@ -130,44 +110,64 @@ function formatNumber(value) {
   }
 }
 
-function getVisitCount() {
-  const stored = localStorage.getItem(VISIT_STORAGE_KEY);
-  const parsed = stored ? parseInt(stored, 10) : 0;
-  return Number.isNaN(parsed) ? 0 : parsed;
+async function countApiRequest(path, { method = "GET", signal, allow404 = false } = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), COUNT_API_TIMEOUT);
+  try {
+    const response = await fetch(`${COUNT_API_BASE}/${path}`, {
+      method,
+      signal: signal || controller.signal,
+    });
+    if (!response.ok) {
+      if (allow404 && response.status === 404) {
+        return null;
+      }
+      const error = new Error(`Request failed with status ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
+    return await response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-function getVisitHistory() {
-  return readJsonStorage(VISIT_HISTORY_KEY, {});
+async function countApiHit(key) {
+  const data = await countApiRequest(`hit/${COUNT_API_NAMESPACE}/${key}`);
+  return data.value ?? 0;
 }
 
-function saveVisitHistory(history) {
-  writeJsonStorage(VISIT_HISTORY_KEY, history);
+async function countApiGet(key) {
+  const data = await countApiRequest(`get/${COUNT_API_NAMESPACE}/${key}`, { allow404: true });
+  if (!data) return 0;
+  return data.value ?? 0;
 }
 
-function recordVisit() {
+async function countApiSet(key, value) {
+  const data = await countApiRequest(`set/${COUNT_API_NAMESPACE}/${key}?value=${encodeURIComponent(value)}`);
+  return data.value ?? value;
+}
+
+async function recordVisit() {
   if (!shouldTrackVisit()) return;
-  const count = getVisitCount();
-  localStorage.setItem(VISIT_STORAGE_KEY, String(count + 1));
-
-  const history = getVisitHistory();
   const today = new Date().toISOString().slice(0, 10);
-  history[today] = (history[today] || 0) + 1;
-  saveVisitHistory(history);
+  try {
+    await Promise.all([
+      countApiHit("visits_total"),
+      countApiHit(`visits_${today}`),
+    ]);
+  } catch (err) {
+    console.warn("Unable to record visit count:", err);
+  }
 }
 
-function getEngagementMetrics() {
-  return readJsonStorage(ENGAGEMENT_STORAGE_KEY, {});
-}
-
-function saveEngagementMetrics(metrics) {
-  writeJsonStorage(ENGAGEMENT_STORAGE_KEY, metrics);
-}
-
-function trackEvent(metricKey) {
+async function trackEvent(metricKey) {
   if (!metricKey) return;
-  const metrics = getEngagementMetrics();
-  metrics[metricKey] = (metrics[metricKey] || 0) + 1;
-  saveEngagementMetrics(metrics);
+  try {
+    await countApiHit(`event_${metricKey}`);
+  } catch (err) {
+    console.warn(`Unable to track metric "${metricKey}":`, err);
+  }
 }
 
 function wireAdmin() {
@@ -206,44 +206,55 @@ function wireAdmin() {
     }
   }
 
-  function showVisits() {
+  async function showVisits() {
     if (!visitCount) return;
+    setDashboardStatus("Loading visit data...");
     try {
-      visitCount.textContent = formatNumber(getVisitCount());
-      if (visitHistoryTable && visitHistoryRows && visitHistoryEmpty) {
-        const history = getVisitHistory();
-        const entries = Object.entries(history)
-          .map(([date, value]) => ({ date, value: Number(value) || 0 }))
-          .sort((a, b) => (a.date < b.date ? 1 : -1));
+      const total = await countApiGet("visits_total");
+      visitCount.textContent = formatNumber(total);
 
-        if (entries.length === 0) {
-          visitHistoryRows.innerHTML = "";
-          visitHistoryEmpty.classList.remove("hidden");
-          visitHistoryTable.classList.add("hidden");
-        } else {
-          visitHistoryEmpty.classList.add("hidden");
-          visitHistoryTable.classList.remove("hidden");
-          const fragment = document.createDocumentFragment();
-          entries.slice(0, 7).forEach(({ date, value }) => {
-            const row = document.createElement("tr");
-            const dateCell = document.createElement("td");
-            const valueCell = document.createElement("td");
-            const dateObj = new Date(date);
-            if (!Number.isNaN(dateObj.getTime())) {
-              dateCell.textContent = dateObj.toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              });
-            } else {
-              dateCell.textContent = date;
-            }
-            valueCell.textContent = formatNumber(value);
-            row.append(dateCell, valueCell);
-            fragment.appendChild(row);
+      if (visitHistoryTable && visitHistoryRows && visitHistoryEmpty) {
+        const dates = [];
+        for (let i = 0; i < 7; i += 1) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          dates.push(date);
+        }
+
+        const results = await Promise.all(dates.map(date => {
+          const key = `visits_${date.toISOString().slice(0, 10)}`;
+          return countApiGet(key).catch(() => 0);
+        }));
+
+        const fragment = document.createDocumentFragment();
+        let hasData = false;
+        dates.forEach((date, index) => {
+          const value = Number(results[index]) || 0;
+          if (value > 0) {
+            hasData = true;
+          }
+          const row = document.createElement("tr");
+          const dateCell = document.createElement("td");
+          const valueCell = document.createElement("td");
+          dateCell.textContent = date.toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
           });
-          visitHistoryRows.innerHTML = "";
-          visitHistoryRows.appendChild(fragment);
+          valueCell.textContent = formatNumber(value);
+          row.append(dateCell, valueCell);
+          fragment.appendChild(row);
+        });
+
+        visitHistoryRows.innerHTML = "";
+        visitHistoryRows.appendChild(fragment);
+
+        if (hasData) {
+          visitHistoryTable.classList.remove("hidden");
+          visitHistoryEmpty.classList.add("hidden");
+        } else {
+          visitHistoryTable.classList.add("hidden");
+          visitHistoryEmpty.classList.remove("hidden");
         }
       }
       setDashboardStatus("");
@@ -258,13 +269,16 @@ function wireAdmin() {
     engagementStatus.classList.toggle("error", Boolean(isError));
   }
 
-  function showEngagement() {
+  async function showEngagement() {
     try {
-      const metrics = getEngagementMetrics();
-      Object.entries(engagementMetricsEls).forEach(([key, el]) => {
+      setEngagementStatus("Loading engagement metrics...");
+      const entries = await Promise.all(Object.keys(engagementMetricsEls).map(key => {
+        return countApiGet(`event_${key}`).catch(() => 0);
+      }));
+
+      Object.entries(engagementMetricsEls).forEach(([key, el], index) => {
         if (!el) return;
-        const value = metrics[key] || 0;
-        el.textContent = formatNumber(value);
+        el.textContent = formatNumber(entries[index]);
       });
       setEngagementStatus("");
     } catch (err) {
@@ -309,26 +323,40 @@ function wireAdmin() {
   passField.addEventListener("input", clearStatus);
 
   if (resetVisitsBtn) {
-    resetVisitsBtn.addEventListener("click", () => {
+    resetVisitsBtn.addEventListener("click", async () => {
+      setDashboardStatus("Resetting visit data...");
+      resetVisitsBtn.disabled = true;
       try {
-        localStorage.setItem(VISIT_STORAGE_KEY, "0");
-        saveVisitHistory({});
-        showVisits();
+        await countApiSet("visits_total", 0);
+        const dates = [];
+        for (let i = 0; i < 14; i += 1) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          dates.push(date.toISOString().slice(0, 10));
+        }
+        await Promise.all(dates.map(dateKey => countApiSet(`visits_${dateKey}`, 0).catch(() => null)));
+        await showVisits();
         setDashboardStatus("Visit counter reset.");
       } catch (err) {
         setDashboardStatus("Unable to reset visit data.", true);
+      } finally {
+        resetVisitsBtn.disabled = false;
       }
     });
   }
 
   if (resetEngagementBtn) {
-    resetEngagementBtn.addEventListener("click", () => {
+    resetEngagementBtn.addEventListener("click", async () => {
+      setEngagementStatus("Resetting engagement metrics...");
+      resetEngagementBtn.disabled = true;
       try {
-        saveEngagementMetrics({});
-        showEngagement();
+        await Promise.all(Object.keys(engagementMetricsEls).map(key => countApiSet(`event_${key}`, 0).catch(() => null)));
+        await showEngagement();
         setEngagementStatus("Engagement metrics reset.");
       } catch (err) {
         setEngagementStatus("Unable to reset engagement metrics.", true);
+      } finally {
+        resetEngagementBtn.disabled = false;
       }
     });
   }
@@ -363,9 +391,7 @@ function wireAdmin() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  try { recordVisit(); } catch (err) {
-    console.warn("Unable to record visit count:", err);
-  }
+  recordVisit();
   wireBuilder();
   wireWaiver();
   wireAdmin();
