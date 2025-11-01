@@ -85,7 +85,104 @@ Date:          _________________________
 }
 
 // -------- Init --------
+const VISIT_STORAGE_KEY = "spxVisitCount";
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "revlimit";
+
+function shouldTrackVisit() {
+  const body = document.body;
+  if (!body) return false;
+  return body.dataset.trackVisit !== "false";
+}
+
+function getVisitCount() {
+  const stored = localStorage.getItem(VISIT_STORAGE_KEY);
+  const parsed = stored ? parseInt(stored, 10) : 0;
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function recordVisit() {
+  if (!shouldTrackVisit()) return;
+  const count = getVisitCount();
+  localStorage.setItem(VISIT_STORAGE_KEY, String(count + 1));
+}
+
+function wireAdmin() {
+  const form = document.getElementById("adminLoginForm");
+  if (!form) return; // not on admin page
+
+  const userField = document.getElementById("adminUser");
+  const passField = document.getElementById("adminPass");
+  const status = document.getElementById("adminStatus");
+  const dashboard = document.getElementById("adminDashboard");
+  const visitCount = document.getElementById("visitCount");
+  const resetBtn = document.getElementById("resetVisits");
+  const dashboardStatus = document.getElementById("adminDashboardStatus");
+
+  function setDashboardStatus(message, isError = false) {
+    if (!dashboardStatus) return;
+    dashboardStatus.textContent = message;
+    if (isError) {
+      dashboardStatus.classList.add("error");
+    } else {
+      dashboardStatus.classList.remove("error");
+    }
+  }
+
+  function showVisits() {
+    if (!visitCount) return;
+    try {
+      visitCount.textContent = String(getVisitCount());
+      setDashboardStatus("");
+    } catch (err) {
+      setDashboardStatus("Unable to load visit data.", true);
+    }
+  }
+
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    const user = userField.value.trim();
+    const pass = passField.value;
+    if (user === ADMIN_USER && pass === ADMIN_PASS) {
+      status.textContent = "";
+      status.classList.remove("error");
+      dashboard.classList.remove("hidden");
+      form.classList.add("hidden");
+      showVisits();
+      passField.value = "";
+      setDashboardStatus("");
+    } else {
+      status.textContent = "Invalid username or password.";
+      status.classList.add("error");
+    }
+  });
+
+  function clearStatus() {
+    status.textContent = "";
+    status.classList.remove("error");
+  }
+
+  userField.addEventListener("input", clearStatus);
+  passField.addEventListener("input", clearStatus);
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      try {
+        localStorage.setItem(VISIT_STORAGE_KEY, "0");
+        showVisits();
+        setDashboardStatus("Visit counter reset.");
+      } catch (err) {
+        setDashboardStatus("Unable to reset visit data.", true);
+      }
+    });
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  try { recordVisit(); } catch (err) {
+    console.warn("Unable to record visit count:", err);
+  }
   wireBuilder();
   wireWaiver();
+  wireAdmin();
 });
