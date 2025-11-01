@@ -73,3 +73,11 @@ select{background:#121217; color:var(--text); border:1px solid var(--border); pa
 .admin-actions{display:flex; gap:10px; flex-wrap:wrap}
 .admin-panel{border:1px solid var(--border); border-radius:10px; padding:14px; background:var(--muted); display:flex; flex-direction:column; gap:12px}
 .admin-panel h3{margin:0}
+.admin-table{width:100%; border-collapse:collapse; background:#15151a; border:1px solid var(--border); border-radius:8px; overflow:hidden}
+.admin-table th,.admin-table td{padding:8px 10px; text-align:left}
+.admin-table thead{background:#1f1f25; text-transform:uppercase; font-size:.75rem; letter-spacing:.05em}
+.admin-table tbody tr:nth-child(even){background:#18181d}
+.metric-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px}
+.metric-list li{display:flex; justify-content:space-between; gap:12px; background:#15151a; border:1px solid var(--border); border-radius:8px; padding:10px 12px; align-items:center}
+.metric-list li span{font-weight:600}
+.metric-list li strong{font-size:1.1rem}
