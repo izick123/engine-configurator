@@ -25,7 +25,7 @@
   <main class="container">
     <section class="card admin-card">
       <h1>Admin Dashboard</h1>
-      <p>Log in to review the visit counter stored for this browser.</p>
+      <p>Log in to review the locally stored analytics for this browser.</p>
 
       <form id="adminLoginForm" class="admin-form" novalidate>
         <label>
@@ -46,14 +46,34 @@
 
         <div class="admin-actions">
           <button id="toggleVisitPanel" class="btn" type="button" aria-expanded="false" aria-controls="visitPanel">Site Visit Counter</button>
+          <button id="toggleEngagementPanel" class="btn" type="button" aria-expanded="false" aria-controls="engagementPanel">Engagement Metrics</button>
         </div>
 
         <section id="visitPanel" class="admin-panel hidden" aria-live="polite">
           <h3>Site Visits</h3>
           <p>Total visits recorded on this device: <strong><span id="visitCount">0</span></strong></p>
-          <button id="resetVisits" class="btn" type="button">Reset Counter</button>
+          <table id="visitHistoryTable" class="admin-table hidden" aria-describedby="visitHistoryNote">
+            <thead>
+              <tr><th scope="col">Date</th><th scope="col">Visits</th></tr>
+            </thead>
+            <tbody id="visitHistoryRows"></tbody>
+          </table>
+          <p id="visitHistoryEmpty" class="small muted">No daily history yet. Visit a page to start tracking.</p>
+          <button id="resetVisits" class="btn" type="button">Reset Counter &amp; History</button>
           <p id="adminDashboardStatus" class="small"></p>
-          <p class="small muted">Counts are tracked locally per browser via local storage.</p>
+          <p id="visitHistoryNote" class="small muted">Counts are tracked locally per browser via local storage.</p>
+        </section>
+
+        <section id="engagementPanel" class="admin-panel hidden" aria-live="polite">
+          <h3>Engagement Metrics</h3>
+          <p class="small muted">These totals reflect actions recorded on this browser.</p>
+          <ul class="metric-list">
+            <li><span>Checkout button clicks</span><strong id="metricCheckoutClicks">0</strong></li>
+            <li><span>Order confirmations attempted</span><strong id="metricOrderAttempts">0</strong></li>
+            <li><span>Waiver downloads</span><strong id="metricWaiverDownloads">0</strong></li>
+          </ul>
+          <button id="resetEngagement" class="btn" type="button">Reset Engagement Metrics</button>
+          <p id="engagementStatus" class="small"></p>
         </section>
       </div>
     </section>
