@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SPX Engineering — Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body data-track-visit="false">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="./" class="brand-link" aria-label="SPX Engineering Home">
+        <img src="logo.png" alt="SPX Engineering" class="logo">
+      </a>
+      <nav class="nav">
+        <a href="./">Home</a>
+        <a href="builder.html">Builder</a>
+        <a href="faq.html">FAQ</a>
+        <a href="mailto:engines@example.com">Contact</a>
+        <a href="admin.html" aria-current="page">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card admin-card">
+      <h1>Admin Dashboard</h1>
+      <p>Log in to review the visit counter stored for this browser.</p>
+
+      <form id="adminLoginForm" class="admin-form" novalidate>
+        <label>
+          Username
+          <input id="adminUser" name="username" type="text" autocomplete="username" required />
+        </label>
+        <label>
+          Password
+          <input id="adminPass" name="password" type="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="btn primary">Log In</button>
+        <p id="adminStatus" role="alert"></p>
+      </form>
+
+      <div id="adminDashboard" class="admin-dashboard hidden" aria-live="polite">
+        <h2>Site Visits</h2>
+        <p>Total visits recorded on this device: <strong><span id="visitCount">0</span></strong></p>
+        <button id="resetVisits" class="btn" type="button">Reset Counter</button>
+        <p id="adminDashboardStatus" class="small"></p>
+        <p class="small muted">Counts are tracked locally per browser via local storage.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div><strong>SPX Engineering</strong> — Hand-built, race-ready engines.</div>
+      <div class="small">Horsepower is estimated; actual horsepower may vary. For racing use only.</div>
+      <div class="small">Contact: <a href="mailto:engines@example.com">engines@example.com</a> • <a href="tel:+15555550123">(555) 555-0123</a></div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
