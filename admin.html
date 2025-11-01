@@ -41,11 +41,20 @@
       </form>
 
       <div id="adminDashboard" class="admin-dashboard hidden" aria-live="polite">
-        <h2>Site Visits</h2>
-        <p>Total visits recorded on this device: <strong><span id="visitCount">0</span></strong></p>
-        <button id="resetVisits" class="btn" type="button">Reset Counter</button>
-        <p id="adminDashboardStatus" class="small"></p>
-        <p class="small muted">Counts are tracked locally per browser via local storage.</p>
+        <h2>Admin Menu</h2>
+        <p>Select a tool below to manage site utilities.</p>
+
+        <div class="admin-actions">
+          <button id="toggleVisitPanel" class="btn" type="button" aria-expanded="false" aria-controls="visitPanel">Site Visit Counter</button>
+        </div>
+
+        <section id="visitPanel" class="admin-panel hidden" aria-live="polite">
+          <h3>Site Visits</h3>
+          <p>Total visits recorded on this device: <strong><span id="visitCount">0</span></strong></p>
+          <button id="resetVisits" class="btn" type="button">Reset Counter</button>
+          <p id="adminDashboardStatus" class="small"></p>
+          <p class="small muted">Counts are tracked locally per browser via local storage.</p>
+        </section>
       </div>
     </section>
   </main>
