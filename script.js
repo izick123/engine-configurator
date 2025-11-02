@@ -27,6 +27,41 @@ function updateBuild() {
 
   document.getElementById("totalPrice").textContent = price;
   document.getElementById("totalHp").textContent = hp;
+
+  // Update horsepower progress bar
+  const hpProgressEl = document.getElementById("hpProgress");
+  if (hpProgressEl && window.MAX_HP) {
+    const percent = Math.min((hp / window.MAX_HP) * 100, 100);
+    hpProgressEl.style.width = `${percent}%`;
+  }
+  // Update selected upgrades summary list
+  const summaryList = document.getElementById("summaryList");
+  if (summaryList) {
+    summaryList.innerHTML = "";
+    const selected = [];
+    document.querySelectorAll(".upgrade").forEach(up => {
+      if (up.checked) {
+        const priceVal = Number(up.dataset.price) || 0;
+        const hpVal = Number(up.dataset.hp) || 0;
+        // Skip zero-cost upgrades that do not affect performance (e.g. stock options)
+        if (priceVal <= 0 && hpVal <= 0) return;
+        // Use the parent label text as the name
+        const label = up.parentElement ? up.parentElement.textContent.trim() : null;
+        if (label) selected.push(label);
+      }
+    });
+    if (selected.length > 0) {
+      selected.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        summaryList.appendChild(li);
+      });
+    } else {
+      const li = document.createElement("li");
+      li.textContent = "No upgrades selected.";
+      summaryList.appendChild(li);
+    }
+  }
 }
 
 function wireBuilder() {
@@ -34,7 +69,10 @@ function wireBuilder() {
   if (!base) return; // not on builder page
   base.addEventListener("change", updateBuild);
   document.querySelectorAll(".upgrade").forEach(u => u.addEventListener("change", updateBuild));
+  // Preselect base from query string
   preselectFromQuery();
+  // Compute maximum horsepower for scaling progress bar once on load
+  window.MAX_HP = computeMaxHp();
   updateBuild();
 }
 
@@ -91,12 +129,59 @@ Date:          _________________________
 const ADMIN_USER = "admin";
 const ADMIN_PASS = "revlimit";
 const COUNT_API_NAMESPACE = "spx_engine_configurator";
-const COUNT_API_BASE = "https://api.countapi.xyz";
+// Replace CountAPI with CounterAPI (v1) since CountAPI is no longer available.
+// CounterAPI v1 endpoints:
+//   Increment (up):  https://api.counterapi.dev/v1/:namespace/:name/up
+//   Get current:    https://api.counterapi.dev/v1/:namespace/:name
+//   Set count:      https://api.counterapi.dev/v1/:namespace/:name/set?count=<value>
+//   List counts:    https://api.counterapi.dev/v1/:namespace/:name/list?group_by=day&order_by=desc
+const COUNT_API_BASE = "https://api.counterapi.dev/v1";
 const COUNT_API_TIMEOUT = 5000;
 const PENDING_VISITS_KEY = "spxPendingVisits";
 const PENDING_EVENTS_KEY = "spxPendingEvents";
 const LOCAL_ANALYTICS_KEY = "spxLocalAnalytics";
-const COUNT_API_KEY_CACHE = new Set();
+// The legacy CountAPI required key creation. CounterAPI automatically creates
+// counters when you read or set them, so we don't need to cache keys.
+
+// -------- Performance helper --------
+// Compute the maximum achievable horsepower for scaling the progress bar.
+// This considers the highest base HP across engine options, the maximum HP
+// contribution of each radio-group of upgrades (e.g. carb, cam), and the
+// sum of all checkbox upgrades (since checkboxes can be combined).
+function computeMaxHp() {
+  const baseSelect = document.getElementById("engineBase");
+  if (!baseSelect) return 0;
+  // Determine highest base horsepower
+  let maxHp = 0;
+  baseSelect.querySelectorAll("option").forEach(opt => {
+    const baseHp = Number(opt.dataset.hp) || 0;
+    if (baseHp > maxHp) maxHp = baseHp;
+  });
+  // Map of radio group -> max hp in that group
+  const radioGroupMax = {};
+  document.querySelectorAll(".upgrade").forEach(up => {
+    const group = up.dataset.group;
+    const hp = Number(up.dataset.hp) || 0;
+    if (!group) return;
+    if (up.type === "radio") {
+      if (!radioGroupMax[group] || hp > radioGroupMax[group]) {
+        radioGroupMax[group] = hp;
+      }
+    }
+  });
+  // Sum the highest hp per radio group
+  Object.values(radioGroupMax).forEach(val => {
+    maxHp += val;
+  });
+  // Sum all checkbox hp (they can all be selected)
+  document.querySelectorAll(".upgrade").forEach(up => {
+    const hp = Number(up.dataset.hp) || 0;
+    if (up.type !== "radio") {
+      maxHp += hp;
+    }
+  });
+  return maxHp;
+}
 
 function shouldTrackVisit() {
   const body = document.body;
@@ -136,52 +221,45 @@ async function countApiRequest(path, { method = "GET", signal, allow404 = false 
   }
 }
 
-async function ensureCountApiKey(key) {
-  if (COUNT_API_KEY_CACHE.has(key)) {
-    return;
-  }
-  try {
-    const existing = await countApiRequest(`get/${COUNT_API_NAMESPACE}/${key}`, { allow404: true });
-    if (existing !== null) {
-      COUNT_API_KEY_CACHE.add(key);
-      return;
-    }
-  } catch (err) {
-    if (err && err.status && err.status !== 404) {
-      throw err;
-    }
-  }
-  try {
-    await countApiRequest(
-      `create?namespace=${encodeURIComponent(COUNT_API_NAMESPACE)}&key=${encodeURIComponent(key)}&value=0`,
-    );
-  } catch (err) {
-    if (!(err && err.status === 409)) {
-      throw err;
-    }
-  }
-  COUNT_API_KEY_CACHE.add(key);
-}
-
+/**
+ * Retrieve the current value of a counter.
+ * CounterAPI returns an object with a `count` property.
+ */
 async function countApiGet(key) {
-  const data = await countApiRequest(`get/${COUNT_API_NAMESPACE}/${key}`, { allow404: true });
-  if (!data) return 0;
-  return data.value ?? 0;
+  const data = await countApiRequest(`${COUNT_API_NAMESPACE}/${key}`, { allow404: true });
+  if (!data || typeof data.count === "undefined") return 0;
+  return data.count;
 }
 
+/**
+ * Set a counter to a specific value. CounterAPI allows setting counts via
+ * the `/set` endpoint. The API returns an object with the new `count` value.
+ */
 async function countApiSet(key, value) {
-  await ensureCountApiKey(key);
-  const data = await countApiRequest(`set/${COUNT_API_NAMESPACE}/${key}?value=${encodeURIComponent(value)}`);
-  return data.value ?? value;
+  const data = await countApiRequest(`${COUNT_API_NAMESPACE}/${key}/set?count=${encodeURIComponent(value)}`);
+  if (!data || typeof data.count === "undefined") return value;
+  return data.count;
 }
 
+/**
+ * Add to a counter. CounterAPI V1 does not support atomic increments by arbitrary
+ * amounts, so we read the current count and then set it to (current + amount).
+ * If amount is 0, simply return the current count.
+ */
 async function countApiAdd(key, amount = 1) {
   if (!amount) {
     return countApiGet(key);
   }
-  await ensureCountApiKey(key);
-  const data = await countApiRequest(`update/${COUNT_API_NAMESPACE}/${key}?amount=${encodeURIComponent(amount)}`);
-  return data.value ?? amount;
+  // Fetch current value
+  let current;
+  try {
+    current = await countApiGet(key);
+  } catch (err) {
+    current = 0;
+  }
+  const newValue = (Number(current) || 0) + amount;
+  await countApiSet(key, newValue);
+  return newValue;
 }
 
 function readLocalAnalytics() {
@@ -838,7 +916,104 @@ document.addEventListener("DOMContentLoaded", () => {
   wireBuilder();
   wireWaiver();
   wireAdmin();
+  wireThemeToggle();
+  wireFaq();
 });
+
+// -------- Theme toggling (light/dark) --------
+/**
+ * Apply a theme by setting the data-theme attribute on the root element. The
+ * provided theme name should be either "light" or "dark". This function
+ * persists the choice in localStorage so that the preference sticks on
+ * subsequent visits.
+ */
+function setTheme(theme) {
+  const root = document.documentElement;
+  if (!root) return;
+  if (theme === "light") {
+    root.setAttribute("data-theme", "light");
+  } else {
+    root.setAttribute("data-theme", "dark");
+  }
+  try {
+    localStorage.setItem("spxTheme", theme);
+  } catch (err) {
+    console.warn("Unable to persist theme preference:", err);
+  }
+}
+
+/**
+ * Toggle between light and dark themes. Reads the current theme from
+ * localStorage (defaulting to dark) and applies the opposite.
+ */
+function toggleTheme() {
+  const current = (() => {
+    try {
+      return localStorage.getItem("spxTheme") || "dark";
+    } catch {
+      return "dark";
+    }
+  })();
+  setTheme(current === "light" ? "dark" : "light");
+}
+
+/**
+ * Wire up the theme toggle button in the header. If a previously stored
+ * preference exists it will be applied immediately. Clicking the button
+ * toggles between light and dark modes.
+ */
+function wireThemeToggle() {
+  const toggleBtn = document.getElementById("themeToggle");
+  // Apply persisted theme on load
+  try {
+    const saved = localStorage.getItem("spxTheme");
+    if (saved === "light" || saved === "dark") {
+      setTheme(saved);
+    }
+  } catch (err) {
+    console.warn("Unable to read stored theme preference:", err);
+  }
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      toggleTheme();
+    });
+  }
+}
+
+// -------- FAQ accordion --------
+/**
+ * Enhance the FAQ page with collapsible questions. Each FAQ item contains
+ * an <h3> followed by a <p>. The paragraphs are hidden by default via
+ * CSS (using the .hidden class). Clicking or pressing Enter/Space on the
+ * header toggles the visibility of the associated paragraph.
+ */
+function wireFaq() {
+  const items = document.querySelectorAll(".faq-item");
+  if (!items || items.length === 0) return;
+  items.forEach(item => {
+    const header = item.querySelector("h3");
+    const content = item.querySelector("p");
+    if (!header || !content) return;
+    // Ensure paragraphs start hidden if they don't already have the hidden class
+    if (!content.classList.contains("hidden")) {
+      content.classList.add("hidden");
+    }
+    header.setAttribute("tabindex", "0");
+    header.setAttribute("role", "button");
+    header.setAttribute("aria-expanded", "false");
+    function toggle() {
+      const isHidden = content.classList.toggle("hidden");
+      header.setAttribute("aria-expanded", String(!isHidden));
+    }
+    header.addEventListener("click", toggle);
+    header.addEventListener("keypress", e => {
+      if (e.key === "Enter" || e.key === " ") {
+        toggle();
+        e.preventDefault();
+      }
+    });
+  });
+}
 
 window.addEventListener("online", syncPendingAnalytics);
 document.addEventListener("visibilitychange", () => {
