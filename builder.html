@@ -20,6 +20,10 @@
         <a href="mailto:engines@example.com">Contact</a>
         <a href="admin.html">Admin</a>
       </nav>
+      <!-- Theme toggle button for switching light/dark modes -->
+      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
+        <span aria-hidden="true">🌓</span>
+      </button>
     </div>
   </header>
 
@@ -117,6 +121,12 @@
           <span id="totalHp">0</span> hp
           <span class="hp-disclaimer">(*estimate; actual horsepower may vary)</span>
         </p>
+        <!-- Horsepower progress bar for a quick visual of your build's potential -->
+        <div class="hp-progress-container" role="progressbar" aria-label="Horsepower progress">
+          <div id="hpProgress" class="hp-progress" aria-valuemin="0"></div>
+        </div>
+        <p><strong>Selected Upgrades:</strong></p>
+        <ul id="summaryList" class="summary-list"></ul>
       </div>
 
       <div class="actions">
