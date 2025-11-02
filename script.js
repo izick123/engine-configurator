@@ -93,6 +93,8 @@ const ADMIN_PASS = "revlimit";
 const COUNT_API_NAMESPACE = "spx_engine_configurator";
 const COUNT_API_BASE = "https://api.countapi.xyz";
 const COUNT_API_TIMEOUT = 5000;
+const PENDING_VISITS_KEY = "spxPendingVisits";
+const PENDING_EVENTS_KEY = "spxPendingEvents";
 
 function shouldTrackVisit() {
   const body = document.body;
@@ -132,11 +134,6 @@ async function countApiRequest(path, { method = "GET", signal, allow404 = false 
   }
 }
 
-async function countApiHit(key) {
-  const data = await countApiRequest(`hit/${COUNT_API_NAMESPACE}/${key}`);
-  return data.value ?? 0;
-}
-
 async function countApiGet(key) {
   const data = await countApiRequest(`get/${COUNT_API_NAMESPACE}/${key}`, { allow404: true });
   if (!data) return 0;
@@ -148,25 +145,221 @@ async function countApiSet(key, value) {
   return data.value ?? value;
 }
 
-async function recordVisit() {
-  if (!shouldTrackVisit()) return;
-  const today = new Date().toISOString().slice(0, 10);
+async function countApiAdd(key, amount = 1) {
+  if (!amount) {
+    return countApiGet(key);
+  }
+  const data = await countApiRequest(`hit/${COUNT_API_NAMESPACE}/${key}?amount=${encodeURIComponent(amount)}`);
+  return data.value ?? amount;
+}
+
+function readPendingVisits() {
   try {
-    await Promise.all([
-      countApiHit("visits_total"),
-      countApiHit(`visits_${today}`),
-    ]);
+    const raw = localStorage.getItem(PENDING_VISITS_KEY);
+    if (!raw) {
+      return { total: 0, dates: {} };
+    }
+    const parsed = JSON.parse(raw);
+    const total = Number(parsed.total) || 0;
+    const dates = parsed.dates && typeof parsed.dates === "object" ? parsed.dates : {};
+    const sanitizedDates = {};
+    for (const [date, value] of Object.entries(dates)) {
+      const numeric = Number(value) || 0;
+      if (numeric > 0) {
+        sanitizedDates[date] = numeric;
+      }
+    }
+    return { total, dates: sanitizedDates };
   } catch (err) {
-    console.warn("Unable to record visit count:", err);
+    console.warn("Unable to read pending visits from storage:", err);
+    return { total: 0, dates: {} };
   }
 }
 
-async function trackEvent(metricKey) {
-  if (!metricKey) return;
+function writePendingVisits(data) {
   try {
-    await countApiHit(`event_${metricKey}`);
+    localStorage.setItem(PENDING_VISITS_KEY, JSON.stringify(data));
   } catch (err) {
-    console.warn(`Unable to track metric "${metricKey}":`, err);
+    console.warn("Unable to persist pending visits:", err);
+  }
+}
+
+function queueVisitIncrement(date, amount = 1) {
+  if (!date || amount <= 0) return;
+  const pending = readPendingVisits();
+  pending.total = (pending.total || 0) + amount;
+  pending.dates[date] = (pending.dates[date] || 0) + amount;
+  writePendingVisits(pending);
+}
+
+let visitFlushPromise = null;
+
+function hasPendingVisits() {
+  const pending = readPendingVisits();
+  if ((pending.total || 0) > 0) return true;
+  return Object.values(pending.dates || {}).some(value => (Number(value) || 0) > 0);
+}
+
+async function flushPendingVisits() {
+  if (visitFlushPromise) {
+    return visitFlushPromise;
+  }
+
+  const pending = readPendingVisits();
+  const tasks = [];
+
+  if ((pending.total || 0) > 0) {
+    tasks.push(countApiAdd("visits_total", pending.total));
+  }
+
+  for (const [date, value] of Object.entries(pending.dates || {})) {
+    const numeric = Number(value) || 0;
+    if (numeric > 0) {
+      tasks.push(countApiAdd(`visits_${date}`, numeric));
+    }
+  }
+
+  if (tasks.length === 0) {
+    return true;
+  }
+
+  visitFlushPromise = (async () => {
+    try {
+      await Promise.all(tasks);
+      writePendingVisits({ total: 0, dates: {} });
+      return true;
+    } catch (err) {
+      console.warn("Unable to flush pending visits:", err);
+      return false;
+    } finally {
+      visitFlushPromise = null;
+    }
+  })();
+
+  return visitFlushPromise;
+}
+
+function readPendingEvents() {
+  try {
+    const raw = localStorage.getItem(PENDING_EVENTS_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") {
+      return parsed;
+    }
+    return {};
+  } catch (err) {
+    console.warn("Unable to read pending events from storage:", err);
+    return {};
+  }
+}
+
+function writePendingEvents(data) {
+  try {
+    localStorage.setItem(PENDING_EVENTS_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.warn("Unable to persist pending events:", err);
+  }
+}
+
+function queuePendingEvent(metricKey, amount = 1) {
+  if (!metricKey || amount <= 0) return;
+  const pending = readPendingEvents();
+  pending[metricKey] = (Number(pending[metricKey]) || 0) + amount;
+  writePendingEvents(pending);
+}
+
+let eventFlushPromise = null;
+
+function hasPendingEvents() {
+  return Object.values(readPendingEvents()).some(value => (Number(value) || 0) > 0);
+}
+
+async function flushPendingEvents() {
+  if (eventFlushPromise) {
+    return eventFlushPromise;
+  }
+
+  const pending = readPendingEvents();
+  const entries = Object.entries(pending).filter(([, value]) => (Number(value) || 0) > 0);
+
+  if (entries.length === 0) {
+    return true;
+  }
+
+  eventFlushPromise = (async () => {
+    try {
+      await Promise.all(entries.map(([key, amount]) => countApiAdd(`event_${key}`, Number(amount) || 0)));
+      writePendingEvents({});
+      return true;
+    } catch (err) {
+      console.warn("Unable to flush pending events:", err);
+      return false;
+    } finally {
+      eventFlushPromise = null;
+    }
+  })();
+
+  return eventFlushPromise;
+}
+
+function recordVisit() {
+  (async () => {
+    try {
+      await flushPendingVisits();
+    } catch (err) {
+      console.warn("Unable to flush visits before recording:", err);
+    }
+
+    if (!shouldTrackVisit()) {
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      await Promise.all([
+        countApiAdd("visits_total", 1),
+        countApiAdd(`visits_${today}`, 1),
+      ]);
+    } catch (err) {
+      queueVisitIncrement(today, 1);
+      console.warn("Unable to record visit count immediately; queued for retry.", err);
+    }
+  })();
+}
+
+function trackEvent(metricKey) {
+  if (!metricKey) return;
+
+  (async () => {
+    try {
+      await flushPendingEvents();
+    } catch (err) {
+      console.warn("Unable to flush pending events before recording:", err);
+    }
+
+    try {
+      await countApiAdd(`event_${metricKey}`, 1);
+    } catch (err) {
+      queuePendingEvent(metricKey, 1);
+      console.warn(`Unable to track metric "${metricKey}" immediately; queued for retry.`, err);
+    }
+  })();
+}
+
+function syncPendingAnalytics() {
+  try {
+    flushPendingVisits();
+  } catch (err) {
+    console.warn("Unable to start visit sync:", err);
+  }
+
+  try {
+    flushPendingEvents();
+  } catch (err) {
+    console.warn("Unable to start engagement sync:", err);
   }
 }
 
@@ -257,7 +450,11 @@ function wireAdmin() {
           visitHistoryEmpty.classList.remove("hidden");
         }
       }
-      setDashboardStatus("");
+      if (hasPendingVisits()) {
+        setDashboardStatus("Some visit data is queued locally and will sync once the connection returns.");
+      } else {
+        setDashboardStatus("");
+      }
     } catch (err) {
       setDashboardStatus("Unable to load visit data.", true);
     }
@@ -280,7 +477,11 @@ function wireAdmin() {
         if (!el) return;
         el.textContent = formatNumber(entries[index]);
       });
-      setEngagementStatus("");
+      if (hasPendingEvents()) {
+        setEngagementStatus("Some engagement metrics are queued locally and will sync once the connection returns.");
+      } else {
+        setEngagementStatus("");
+      }
     } catch (err) {
       setEngagementStatus("Unable to load engagement metrics.", true);
     }
@@ -335,6 +536,7 @@ function wireAdmin() {
           dates.push(date.toISOString().slice(0, 10));
         }
         await Promise.all(dates.map(dateKey => countApiSet(`visits_${dateKey}`, 0).catch(() => null)));
+        writePendingVisits({ total: 0, dates: {} });
         await showVisits();
         setDashboardStatus("Visit counter reset.");
       } catch (err) {
@@ -351,6 +553,7 @@ function wireAdmin() {
       resetEngagementBtn.disabled = true;
       try {
         await Promise.all(Object.keys(engagementMetricsEls).map(key => countApiSet(`event_${key}`, 0).catch(() => null)));
+        writePendingEvents({});
         await showEngagement();
         setEngagementStatus("Engagement metrics reset.");
       } catch (err) {
@@ -391,6 +594,7 @@ function wireAdmin() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  syncPendingAnalytics();
   recordVisit();
   wireBuilder();
   wireWaiver();
