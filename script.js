@@ -95,6 +95,8 @@ const COUNT_API_BASE = "https://api.countapi.xyz";
 const COUNT_API_TIMEOUT = 5000;
 const PENDING_VISITS_KEY = "spxPendingVisits";
 const PENDING_EVENTS_KEY = "spxPendingEvents";
+const LOCAL_ANALYTICS_KEY = "spxLocalAnalytics";
+const COUNT_API_KEY_CACHE = new Set();
 
 function shouldTrackVisit() {
   const body = document.body;
@@ -134,6 +136,33 @@ async function countApiRequest(path, { method = "GET", signal, allow404 = false 
   }
 }
 
+async function ensureCountApiKey(key) {
+  if (COUNT_API_KEY_CACHE.has(key)) {
+    return;
+  }
+  try {
+    const existing = await countApiRequest(`get/${COUNT_API_NAMESPACE}/${key}`, { allow404: true });
+    if (existing !== null) {
+      COUNT_API_KEY_CACHE.add(key);
+      return;
+    }
+  } catch (err) {
+    if (err && err.status && err.status !== 404) {
+      throw err;
+    }
+  }
+  try {
+    await countApiRequest(
+      `create?namespace=${encodeURIComponent(COUNT_API_NAMESPACE)}&key=${encodeURIComponent(key)}&value=0`,
+    );
+  } catch (err) {
+    if (!(err && err.status === 409)) {
+      throw err;
+    }
+  }
+  COUNT_API_KEY_CACHE.add(key);
+}
+
 async function countApiGet(key) {
   const data = await countApiRequest(`get/${COUNT_API_NAMESPACE}/${key}`, { allow404: true });
   if (!data) return 0;
@@ -141,6 +170,7 @@ async function countApiGet(key) {
 }
 
 async function countApiSet(key, value) {
+  await ensureCountApiKey(key);
   const data = await countApiRequest(`set/${COUNT_API_NAMESPACE}/${key}?value=${encodeURIComponent(value)}`);
   return data.value ?? value;
 }
@@ -149,8 +179,99 @@ async function countApiAdd(key, amount = 1) {
   if (!amount) {
     return countApiGet(key);
   }
-  const data = await countApiRequest(`hit/${COUNT_API_NAMESPACE}/${key}?amount=${encodeURIComponent(amount)}`);
+  await ensureCountApiKey(key);
+  const data = await countApiRequest(`update/${COUNT_API_NAMESPACE}/${key}?amount=${encodeURIComponent(amount)}`);
   return data.value ?? amount;
+}
+
+function readLocalAnalytics() {
+  try {
+    const raw = localStorage.getItem(LOCAL_ANALYTICS_KEY);
+    if (!raw) {
+      return { visits: { total: 0, dates: {} }, events: {} };
+    }
+    const parsed = JSON.parse(raw);
+    const visits = parsed && typeof parsed === "object" ? parsed.visits : {};
+    const events = parsed && typeof parsed === "object" ? parsed.events : {};
+    const sanitizedDates = {};
+    if (visits && typeof visits === "object" && visits.dates) {
+      for (const [date, value] of Object.entries(visits.dates)) {
+        const numeric = Number(value) || 0;
+        if (numeric > 0) {
+          sanitizedDates[date] = numeric;
+        }
+      }
+    }
+    const visitTotal = visits && typeof visits.total !== "undefined" ? Number(visits.total) : 0;
+    return {
+      visits: {
+        total: Number.isNaN(visitTotal) ? 0 : visitTotal,
+        dates: sanitizedDates,
+      },
+      events: Object.entries(events || {}).reduce((acc, [key, value]) => {
+        const numeric = Number(value) || 0;
+        if (numeric > 0) {
+          acc[key] = numeric;
+        }
+        return acc;
+      }, {}),
+    };
+  } catch (err) {
+    console.warn("Unable to read local analytics snapshot:", err);
+    return { visits: { total: 0, dates: {} }, events: {} };
+  }
+}
+
+function writeLocalAnalytics(data) {
+  try {
+    localStorage.setItem(LOCAL_ANALYTICS_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.warn("Unable to persist local analytics snapshot:", err);
+  }
+}
+
+function recordLocalVisit(date, amount = 1) {
+  if (!date || amount <= 0) return;
+  const snapshot = readLocalAnalytics();
+  if (!snapshot.visits || typeof snapshot.visits !== "object") {
+    snapshot.visits = { total: 0, dates: {} };
+  }
+  if (!snapshot.visits.dates || typeof snapshot.visits.dates !== "object") {
+    snapshot.visits.dates = {};
+  }
+  snapshot.visits.total = (snapshot.visits.total || 0) + amount;
+  snapshot.visits.dates[date] = (snapshot.visits.dates[date] || 0) + amount;
+  writeLocalAnalytics(snapshot);
+}
+
+function clearLocalVisits() {
+  const snapshot = readLocalAnalytics();
+  snapshot.visits = { total: 0, dates: {} };
+  writeLocalAnalytics(snapshot);
+}
+
+function getLocalVisits() {
+  return readLocalAnalytics().visits;
+}
+
+function recordLocalEvent(metricKey, amount = 1) {
+  if (!metricKey || amount <= 0) return;
+  const snapshot = readLocalAnalytics();
+  if (!snapshot.events || typeof snapshot.events !== "object") {
+    snapshot.events = {};
+  }
+  snapshot.events[metricKey] = (snapshot.events[metricKey] || 0) + amount;
+  writeLocalAnalytics(snapshot);
+}
+
+function clearLocalEvents() {
+  const snapshot = readLocalAnalytics();
+  snapshot.events = {};
+  writeLocalAnalytics(snapshot);
+}
+
+function getLocalEvents() {
+  return readLocalAnalytics().events;
 }
 
 function readPendingVisits() {
@@ -327,6 +448,7 @@ function recordVisit() {
       queueVisitIncrement(today, 1);
       console.warn("Unable to record visit count immediately; queued for retry.", err);
     }
+    recordLocalVisit(today, 1);
   })();
 }
 
@@ -346,20 +468,15 @@ function trackEvent(metricKey) {
       queuePendingEvent(metricKey, 1);
       console.warn(`Unable to track metric "${metricKey}" immediately; queued for retry.`, err);
     }
+    recordLocalEvent(metricKey, 1);
   })();
 }
 
-function syncPendingAnalytics() {
+async function syncPendingAnalytics() {
   try {
-    flushPendingVisits();
+    await Promise.all([flushPendingVisits(), flushPendingEvents()]);
   } catch (err) {
-    console.warn("Unable to start visit sync:", err);
-  }
-
-  try {
-    flushPendingEvents();
-  } catch (err) {
-    console.warn("Unable to start engagement sync:", err);
+    console.warn("Unable to complete analytics sync:", err);
   }
 }
 
@@ -403,8 +520,14 @@ function wireAdmin() {
     if (!visitCount) return;
     setDashboardStatus("Loading visit data...");
     try {
+      try {
+        await flushPendingVisits();
+      } catch (err) {
+        console.warn("Unable to flush pending visits before loading dashboard:", err);
+      }
       const total = await countApiGet("visits_total");
       visitCount.textContent = formatNumber(total);
+      let usingFallback = false;
 
       if (visitHistoryTable && visitHistoryRows && visitHistoryEmpty) {
         const dates = [];
@@ -446,17 +569,96 @@ function wireAdmin() {
           visitHistoryTable.classList.remove("hidden");
           visitHistoryEmpty.classList.add("hidden");
         } else {
-          visitHistoryTable.classList.add("hidden");
-          visitHistoryEmpty.classList.remove("hidden");
+          const localVisits = getLocalVisits();
+          const localEntries = Object.entries(localVisits.dates || {});
+          if (localEntries.length > 0) {
+            usingFallback = true;
+            const fragmentFallback = document.createDocumentFragment();
+            localEntries
+              .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+              .slice(0, 7)
+              .forEach(([dateKey, value]) => {
+                const row = document.createElement("tr");
+                const dateCell = document.createElement("td");
+                const valueCell = document.createElement("td");
+                const dateObj = new Date(dateKey);
+                if (!Number.isNaN(dateObj.getTime())) {
+                  dateCell.textContent = dateObj.toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  });
+                } else {
+                  dateCell.textContent = dateKey;
+                }
+                valueCell.textContent = formatNumber(value);
+                row.append(dateCell, valueCell);
+                fragmentFallback.appendChild(row);
+              });
+            visitHistoryRows.innerHTML = "";
+            visitHistoryRows.appendChild(fragmentFallback);
+            visitHistoryTable.classList.remove("hidden");
+            visitHistoryEmpty.classList.add("hidden");
+          } else {
+            visitHistoryTable.classList.add("hidden");
+            visitHistoryEmpty.classList.remove("hidden");
+          }
         }
       }
       if (hasPendingVisits()) {
         setDashboardStatus("Some visit data is queued locally and will sync once the connection returns.");
+      } else if (total <= 0) {
+        const localVisits = getLocalVisits();
+        if (localVisits.total > 0) {
+          usingFallback = true;
+          visitCount.textContent = formatNumber(localVisits.total);
+          setDashboardStatus("Showing locally cached visit totals. They will sync automatically once a connection is available.");
+        } else {
+          setDashboardStatus("");
+        }
       } else {
         setDashboardStatus("");
       }
+      if (usingFallback && !hasPendingVisits()) {
+        setDashboardStatus("Showing locally cached visit totals. They will sync automatically once a connection is available.");
+      }
     } catch (err) {
-      setDashboardStatus("Unable to load visit data.", true);
+      console.warn("Unable to load visit data, falling back to local snapshot:", err);
+      const localVisits = getLocalVisits();
+      if (localVisits.total > 0) {
+        visitCount.textContent = formatNumber(localVisits.total);
+        const fragmentFallback = document.createDocumentFragment();
+        Object.entries(localVisits.dates || {})
+          .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+          .slice(0, 7)
+          .forEach(([dateKey, value]) => {
+            const row = document.createElement("tr");
+            const dateCell = document.createElement("td");
+            const valueCell = document.createElement("td");
+            const dateObj = new Date(dateKey);
+            if (!Number.isNaN(dateObj.getTime())) {
+              dateCell.textContent = dateObj.toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              });
+            } else {
+              dateCell.textContent = dateKey;
+            }
+            valueCell.textContent = formatNumber(value);
+            row.append(dateCell, valueCell);
+            fragmentFallback.appendChild(row);
+          });
+        if (fragmentFallback.childNodes.length > 0 && visitHistoryRows && visitHistoryTable && visitHistoryEmpty) {
+          visitHistoryRows.innerHTML = "";
+          visitHistoryRows.appendChild(fragmentFallback);
+          visitHistoryTable.classList.remove("hidden");
+          visitHistoryEmpty.classList.add("hidden");
+        }
+        setDashboardStatus("Showing locally cached visit totals. They will sync automatically once a connection is available.");
+      } else {
+        setDashboardStatus("Unable to load visit data.", true);
+      }
     }
   }
 
@@ -469,21 +671,56 @@ function wireAdmin() {
   async function showEngagement() {
     try {
       setEngagementStatus("Loading engagement metrics...");
+      try {
+        await flushPendingEvents();
+      } catch (err) {
+        console.warn("Unable to flush pending events before loading dashboard:", err);
+      }
       const entries = await Promise.all(Object.keys(engagementMetricsEls).map(key => {
         return countApiGet(`event_${key}`).catch(() => 0);
       }));
 
+      let usingFallback = false;
+      const localEvents = getLocalEvents();
+
       Object.entries(engagementMetricsEls).forEach(([key, el], index) => {
         if (!el) return;
-        el.textContent = formatNumber(entries[index]);
+        const value = entries[index];
+        if (value > 0) {
+          el.textContent = formatNumber(value);
+        } else if (localEvents[key]) {
+          usingFallback = true;
+          el.textContent = formatNumber(localEvents[key]);
+        } else {
+          el.textContent = "0";
+        }
       });
       if (hasPendingEvents()) {
         setEngagementStatus("Some engagement metrics are queued locally and will sync once the connection returns.");
+      } else if (usingFallback) {
+        setEngagementStatus("Showing locally cached engagement totals. They will sync automatically once a connection is available.");
       } else {
         setEngagementStatus("");
       }
     } catch (err) {
-      setEngagementStatus("Unable to load engagement metrics.", true);
+      console.warn("Unable to load engagement metrics, falling back to local snapshot:", err);
+      const localEvents = getLocalEvents();
+      let hasLocalData = false;
+      Object.entries(engagementMetricsEls).forEach(([key, el]) => {
+        if (!el) return;
+        const value = Number(localEvents[key]) || 0;
+        if (value > 0) {
+          hasLocalData = true;
+          el.textContent = formatNumber(value);
+        } else {
+          el.textContent = "0";
+        }
+      });
+      if (hasLocalData) {
+        setEngagementStatus("Showing locally cached engagement totals. They will sync automatically once a connection is available.");
+      } else {
+        setEngagementStatus("Unable to load engagement metrics.", true);
+      }
     }
   }
 
@@ -537,6 +774,7 @@ function wireAdmin() {
         }
         await Promise.all(dates.map(dateKey => countApiSet(`visits_${dateKey}`, 0).catch(() => null)));
         writePendingVisits({ total: 0, dates: {} });
+        clearLocalVisits();
         await showVisits();
         setDashboardStatus("Visit counter reset.");
       } catch (err) {
@@ -554,6 +792,7 @@ function wireAdmin() {
       try {
         await Promise.all(Object.keys(engagementMetricsEls).map(key => countApiSet(`event_${key}`, 0).catch(() => null)));
         writePendingEvents({});
+        clearLocalEvents();
         await showEngagement();
         setEngagementStatus("Engagement metrics reset.");
       } catch (err) {
@@ -599,4 +838,11 @@ document.addEventListener("DOMContentLoaded", () => {
   wireBuilder();
   wireWaiver();
   wireAdmin();
+});
+
+window.addEventListener("online", syncPendingAnalytics);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    syncPendingAnalytics();
+  }
 });
