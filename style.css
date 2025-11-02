@@ -2,6 +2,51 @@
   --bg:#0f0f10; --panel:#1a1a1c; --muted:#22242a; --text:#e9e9ef;
   --accent:#ffd34d; --accent-contrast:#1a1a1a; --border:#343540;
 }
+
+/* Light theme overrides. When the root element has data-theme="light" these
+   variables will take precedence over the dark defaults above. This allows
+   users to toggle between dark and light modes without rewriting every rule. */
+[data-theme="light"]{
+  --bg:#f5f5f7;
+  --panel:#ffffff;
+  --muted:#f2f2f5;
+  --text:#1a1a1a;
+  /* Keep the accent colour but tweak the contrast for light backgrounds */
+  --accent:#ffd34d;
+  --accent-contrast:#1a1a1a;
+  --border:#dcdce2;
+}
+
+/* In light mode the dark logo would be hard to see. Invert the
+   image colours to improve contrast. */
+[data-theme="light"] .logo{
+  filter:invert(1) hue-rotate(180deg) brightness(0.9);
+}
+
+/* Icon style for header buttons such as the theme toggle. These are subtle
+   buttons with no border that respond on hover and focus. */
+.icon-btn{
+  background:none;
+  border:none;
+  color:var(--text);
+  font-size:1.2rem;
+  cursor:pointer;
+  padding:6px;
+  margin-left:12px;
+  line-height:1;
+}
+.icon-btn:hover,.icon-btn:focus{
+  color:var(--accent);
+}
+
+/* Collapse FAQ answers by default. The JS will toggle the .hidden class
+   on the paragraphs. Pointer cursor indicates the headers are clickable. */
+.faq-item h3{
+  cursor:pointer;
+}
+.faq-item p.hidden{
+  display:none;
+}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0; font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text)}
@@ -10,16 +55,42 @@ body{margin:0; font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 .error{color:#ff8080; margin-top:8px}
 
 /* Header */
-.site-header{position:sticky; top:0; z-index:5; background:#141417; border-bottom:1px solid var(--border)}
+.site-header{
+  position:sticky;
+  top:0;
+  z-index:5;
+  /* Use the panel colour for the header background so light/dark themes
+     automatically update. */
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+}
 .header-inner{display:flex; align-items:center; justify-content:space-between; gap:16px}
 .brand-link{display:inline-flex; align-items:center; text-decoration:none}
 .logo{height:44px; width:auto; display:block}
-.nav a{color:#cfcfe6; text-decoration:none; margin-left:16px}
-.nav a[aria-current="page"]{text-decoration:underline}
-.nav a:hover{color:#fff}
+/* Navigation links adapt to the current theme via the text colour variable */
+.nav a{
+  color:var(--text);
+  text-decoration:none;
+  margin-left:16px;
+  transition:color .2s ease;
+}
+.nav a[aria-current="page"]{
+  text-decoration:underline;
+  font-weight:600;
+}
+.nav a:hover{
+  color:var(--accent);
+}
 
 /* Hero */
-.hero{background:linear-gradient(135deg,#111 0%,#20222a 50%,#111 100%); border-bottom:1px solid var(--border)}
+.hero{
+  /* Use a mechanical carbon-fiber background with dark overlay for a modern feel */
+  background-image: linear-gradient(to bottom right, rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('hero-bg.png');
+  background-size:cover;
+  background-position:center;
+  border-bottom:1px solid var(--border);
+  color:var(--text);
+}
 .hero-inner{
   padding:88px 16px 72px; /* more space so button never overlaps text */
   text-align:center;
@@ -45,12 +116,66 @@ body{margin:0; font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
 /* Builder */
 .builder h1{margin:0 0 8px}
 h2{margin:16px 0 8px} h3{margin:12px 0 8px}
-select{background:#121217; color:var(--text); border:1px solid var(--border); padding:8px; border-radius:8px; width:100%; max-width:420px}
+/* Use the muted background for selects so they adapt to the active theme */
+select{
+  background:var(--muted);
+  color:var(--text);
+  border:1px solid var(--border);
+  padding:8px;
+  border-radius:8px;
+  width:100%;
+  max-width:420px;
+}
 .section{border-top:1px dashed var(--border); margin-top:12px; padding-top:10px}
 .check{display:flex; gap:10px; align-items:flex-start; margin:8px 0}
 .results{background:var(--muted); border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:12px}
 .hp-disclaimer{font-size:.85rem; color:#bdbdd2; margin-left:6px}
 .actions{margin-top:16px}
+
+/* Horsepower progress bar */
+.hp-progress-container{
+  width:100%;
+  height:8px;
+  background:#22242a;
+  border-radius:4px;
+  margin:8px 0;
+  overflow:hidden;
+}
+.hp-progress{
+  height:100%;
+  background:var(--accent);
+  width:0%;
+  transition:width .3s ease;
+}
+
+/* Summary list of selected upgrades */
+.summary-list{
+  margin:8px 0;
+  padding-left:18px;
+  list-style:disc;
+  color:var(--text);
+  font-size:.9rem;
+}
+.summary-list li{
+  margin-bottom:4px;
+}
+
+/* FAQ styling */
+.faq-item{margin-top:20px;}
+.faq-item h3{margin:0 0 6px;font-size:1.1rem;color:var(--accent);}
+.faq-item p{margin:0 0 12px;font-size:.95rem;line-height:1.4;color:var(--text);}
+
+/* About section on homepage */
+.about{
+  margin-top:40px;
+  background:var(--panel);
+  padding:20px;
+  border-radius:12px;
+  line-height:1.6;
+}
+.about h2{
+  margin-top:0;
+}
 
 /* Footer */
 .site-footer{border-top:1px solid var(--border); background:#141417; margin-top:24px}
@@ -68,7 +193,13 @@ select{background:#121217; color:var(--text); border:1px solid var(--border); pa
 .admin-card h1{margin-top:0}
 .admin-form{display:flex; flex-direction:column; gap:12px; margin-top:12px}
 .admin-form label{display:flex; flex-direction:column; gap:6px; font-weight:600}
-.admin-form input{padding:10px; border-radius:8px; border:1px solid var(--border); background:#121217; color:var(--text)}
+.admin-form input{
+  padding:10px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--muted);
+  color:var(--text);
+}
 .admin-dashboard{margin-top:18px; display:flex; flex-direction:column; gap:12px}
 .admin-actions{display:flex; gap:10px; flex-wrap:wrap}
 .admin-panel{border:1px solid var(--border); border-radius:10px; padding:14px; background:var(--muted); display:flex; flex-direction:column; gap:12px}
