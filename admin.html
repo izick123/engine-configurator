@@ -61,12 +61,12 @@
           <p id="visitHistoryEmpty" class="small muted">No daily history yet. Visit a page to start tracking.</p>
           <button id="resetVisits" class="btn" type="button">Reset Counter &amp; History</button>
           <p id="adminDashboardStatus" class="small"></p>
-          <p id="visitHistoryNote" class="small muted">Counts are stored remotely per day so the totals include every device that loads the site.</p>
+          <p id="visitHistoryNote" class="small muted">Counts are stored remotely per day so the totals include every device that loads the site. If a visit occurs offline, it syncs automatically next time the browser reconnects.</p>
         </section>
 
         <section id="engagementPanel" class="admin-panel hidden" aria-live="polite">
           <h3>Engagement Metrics</h3>
-          <p class="small muted">These totals reflect actions recorded across every device.</p>
+          <p class="small muted">These totals reflect actions recorded across every device. Offline actions are queued locally and synced when the connection returns.</p>
           <ul class="metric-list">
             <li><span>Checkout button clicks</span><strong id="metricCheckoutClicks">0</strong></li>
             <li><span>Order confirmations attempted</span><strong id="metricOrderAttempts">0</strong></li>
