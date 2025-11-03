@@ -17,10 +17,9 @@
         <a href="./">Home</a>
         <a href="builder.html">Builder</a>
         <a href="faq.html" aria-current="page">FAQ</a>
-        <a href="mailto:engines@example.com">Contact</a>
+        <a href="mailto:spxengineering123@gmail.com">Contact</a>
         <a href="admin.html">Admin</a>
       </nav>
-      <!-- Theme toggle button for switching light/dark modes -->
       <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
         <span aria-hidden="true">🌓</span>
       </button>
@@ -45,7 +44,7 @@
       </div>
       <div class="faq-item">
         <h3>Can I order replacement parts?</h3>
-        <p class="hidden">Absolutely. We stock all of the components used in our builds. You can contact us to order individual parts or upgrade kits. Please note that part installation is not covered under warranty.</p>
+        <p class="hidden">Absolutely. We stock all components used in our builds. You can contact us to order individual parts or upgrade kits. Please note that part installation is not covered under warranty.</p>
       </div>
       <div class="faq-item">
         <h3>Do you ship internationally?</h3>
@@ -57,16 +56,17 @@
       </div>
     </section>
 
+    <!-- Contact form -->
     <section class="card" id="contact-form">
       <h2>Ask a question</h2>
       <p class="small muted">Fill out the form and we'll respond as soon as possible.</p>
-      <!-- This form submits to Formspree — replace the action URL with your own form ID if you have one. -->
-      <form action="https://formspree.io/f/mexample" method="POST" class="admin-form" style="max-width:480px">
+      <!-- This form uses mailto so the message is sent directly to your inbox -->
+      <form action="mailto:spxengineering123@gmail.com" method="POST" enctype="text/plain" class="admin-form" style="max-width:480px">
         <label>Email
-          <input type="email" name="_replyto" required placeholder="your@email.com" />
+          <input type="email" name="Email" required placeholder="your@email.com" />
         </label>
         <label>Message
-          <textarea name="message" required rows="5" placeholder="What can we help you with?" style="padding:10px; border-radius:8px; border:1px solid var(--border); background:#121217; color:var(--text);"></textarea>
+          <textarea name="Message" required rows="5" placeholder="What can we help you with?" style="padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--muted); color:var(--text);"></textarea>
         </label>
         <button type="submit" class="btn primary">Send Message</button>
       </form>
@@ -77,7 +77,7 @@
     <div class="container footer-inner">
       <div><strong>SPX Engineering</strong> — Hand-built racing engines.</div>
       <div class="small">Horsepower is estimated; actual horsepower may vary. For racing use only.</div>
-      <div class="small">Contact: <a href="mailto:engines@example.com">engines@example.com</a> • <a href="tel:+15555550123">(555) 555-0123</a></div>
+      <div class="small">Contact: <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a> • <a href="tel:+15555550123">(555) 555-0123</a></div>
     </div>
   </footer>
   <script src="script.js"></script>
