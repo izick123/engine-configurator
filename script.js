@@ -1,5 +1,5 @@
 /* ============================
-      GLOBAL THEME
+      THEME
 =============================== */
 
 function setTheme(theme) {
@@ -19,6 +19,27 @@ function initTheme() {
       setTheme(newTheme);
     });
   }
+}
+
+/* ============================
+      METRICS HELPERS
+=============================== */
+
+function incMetric(key) {
+  const fullKey = "spx_" + key;
+  let val = +localStorage.getItem(fullKey) || 0;
+  localStorage.setItem(fullKey, val + 1);
+}
+
+function getMetrics() {
+  return {
+    visits: +localStorage.getItem("spx_visits") || 0,
+    clicks: +localStorage.getItem("spx_clicks") || 0,
+    builder: +localStorage.getItem("spx_builder") || 0,
+    checkout: +localStorage.getItem("spx_checkout") || 0,
+    orders: +localStorage.getItem("spx_orders") || 0,
+    waivers: +localStorage.getItem("spx_waivers") || 0
+  };
 }
 
 /* ============================
@@ -63,7 +84,7 @@ function updateSummaryList() {
   document.querySelectorAll(".upgrade").forEach((up) => {
     if (!up.checked) return;
 
-    // ✅ FIX: pull the upgrade text from the label instead of data-name
+    // Use the label text so we don't depend on data-name
     const label = up.closest("label");
     let text = "";
 
@@ -98,13 +119,13 @@ function initBuilder() {
 
   base.addEventListener("change", () => {
     updateBuild();
-    recordBuilderInteract();
+    incMetric("builder");
   });
 
   document.querySelectorAll(".upgrade").forEach((up) =>
     up.addEventListener("change", () => {
       updateBuild();
-      recordBuilderInteract();
+      incMetric("builder");
     })
   );
 
@@ -112,24 +133,98 @@ function initBuilder() {
 }
 
 /* ============================
-      CHECKOUT / WAIVER
+      CHECKOUT + WAIVER MODAL
 =============================== */
 
 function initCheckout() {
-  const btn = document.getElementById("checkoutBtn");
-  if (!btn) return;
+  const checkoutBtn = document.getElementById("checkoutBtn");
+  if (!checkoutBtn) return;
 
-  btn.addEventListener("click", () => {
-    const email = prompt(
-      "Sorry — SPX Engineering is not accepting orders yet.\n\nEnter your email to get updates:"
-    );
+  const modal = document.getElementById("waiverModal");
+  const closeBtn = document.getElementById("closeModal");
+  const agreeBox = document.getElementById("agreeBox");
+  const placeOrderBtn = document.getElementById("placeOrder");
+  const downloadBtn = document.getElementById("downloadWaiver");
 
-    if (email && email.includes("@")) {
-      window.location.href = `mailto:spxengineering123@gmail.com?subject=Order%20Interest&body=Please%20notify%20me%20of%20updates.%0D%0AEmail:%20${encodeURIComponent(
-        email
-      )}`;
+  // Open modal on checkout
+  checkoutBtn.addEventListener("click", () => {
+    incMetric("checkout");
+
+    if (!modal) {
+      // Fallback if modal not present
+      simpleOrderPrompt();
+      return;
     }
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    if (agreeBox) agreeBox.checked = false;
+    if (placeOrderBtn) placeOrderBtn.disabled = true;
   });
+
+  // Close modal
+  if (closeBtn && modal) {
+    closeBtn.addEventListener("click", () => {
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    });
+  }
+
+  // Enable place order when checked
+  if (agreeBox && placeOrderBtn) {
+    agreeBox.addEventListener("change", (e) => {
+      placeOrderBtn.disabled = !e.target.checked;
+    });
+  }
+
+  // Place order (really just join email list)
+  if (placeOrderBtn && modal) {
+    placeOrderBtn.addEventListener("click", () => {
+      incMetric("orders");
+      simpleOrderPrompt();
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    });
+  }
+
+  // Waiver download
+  if (downloadBtn) {
+    downloadBtn.addEventListener("click", () => {
+      incMetric("waivers");
+      const waiverText =
+        "SPX Engineering — Racing Waiver\n\n" +
+        "By operating any SPX engine you agree that racing is inherently risky.\n" +
+        "SPX is not liable for damage, injury, or loss of any kind.";
+
+      const blob = new Blob([waiverText], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "SPX_Racing_Waiver.txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+}
+
+function simpleOrderPrompt() {
+  const email = prompt(
+    "Sorry — SPX Engineering is not accepting orders yet.\n\n" +
+      "Enter your email to get updates and dyno results:"
+  );
+
+  if (email && email.includes("@")) {
+    window.location.href =
+      "mailto:spxengineering123@gmail.com" +
+      "?subject=" +
+      encodeURIComponent("SPX Engine Order Interest") +
+      "&body=" +
+      encodeURIComponent(
+        "Please notify me of SPX updates.\n\nEmail: " + email.trim()
+      );
+  }
 }
 
 /* ============================
@@ -144,39 +239,14 @@ function initF1() {
     const email = prompt("Enter your email for updates on the SPX F1 Kart:");
 
     if (email && email.includes("@")) {
-      window.location.href = `mailto:spxengineering123@gmail.com?subject=F1%20Kart%20Interest&body=Email:%20${encodeURIComponent(
-        email
-      )}`;
+      window.location.href =
+        "mailto:spxengineering123@gmail.com" +
+        "?subject=" +
+        encodeURIComponent("F1 Series Kart Interest") +
+        "&body=" +
+        encodeURIComponent("Email: " + email.trim());
     }
   });
-}
-
-/* ============================
-      SITE VISITS + METRICS
-=============================== */
-
-function incrementSiteVisits() {
-  let visits = +localStorage.getItem("spx_visits") || 0;
-  visits++;
-  localStorage.setItem("spx_visits", visits);
-}
-
-function getMetrics() {
-  return {
-    visits: +localStorage.getItem("spx_visits") || 0,
-    buttonClicks: +localStorage.getItem("spx_clicks") || 0,
-    builderInteractions: +localStorage.getItem("spx_builder") || 0,
-  };
-}
-
-function recordClick() {
-  let clicks = +localStorage.getItem("spx_clicks") || 0;
-  localStorage.setItem("spx_clicks", clicks + 1);
-}
-
-function recordBuilderInteract() {
-  let val = +localStorage.getItem("spx_builder") || 0;
-  localStorage.setItem("spx_builder", val + 1);
 }
 
 /* ============================
@@ -189,11 +259,13 @@ function initAdmin() {
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    const user = document.getElementById("adminUser").value;
+    const user = document.getElementById("adminUser").value.trim();
     const pass = document.getElementById("adminPass").value;
 
     if (user === "admin" && pass === "revlimit") {
-      document.getElementById("adminDashboard").classList.remove("hidden");
+      const dash = document.getElementById("adminDashboard");
+      document.getElementById("adminStatus").textContent = "";
+      dash.classList.remove("hidden");
       form.classList.add("hidden");
       initAdminButtons();
     } else {
@@ -204,39 +276,58 @@ function initAdmin() {
 }
 
 function initAdminButtons() {
-  const visitsBtn = document.getElementById("toggleVisitPanel");
-  const metricsBtn = document.getElementById("toggleEngagementPanel");
+  const visitBtn = document.getElementById("toggleVisitPanel");
+  const metricBtn = document.getElementById("toggleEngagementPanel");
   const notesBtn = document.getElementById("toggleNotesPanel");
 
   const visitPanel = document.getElementById("visitPanel");
   const engagementPanel = document.getElementById("engagementPanel");
   const notesPanel = document.getElementById("notesPanel");
 
-  if (visitsBtn && visitPanel) {
-    visitsBtn.addEventListener("click", () => {
+  if (visitBtn && visitPanel) {
+    visitPanel.classList.add("hidden");
+    visitBtn.addEventListener("click", () => {
       visitPanel.classList.toggle("hidden");
-      const m = getMetrics();
-      const p = visitPanel.querySelector("p");
-      if (p) p.textContent = `Total site visits: ${m.visits}`;
+      updateVisitPanel();
     });
   }
 
-  if (metricsBtn && engagementPanel) {
-    metricsBtn.addEventListener("click", () => {
+  if (metricBtn && engagementPanel) {
+    engagementPanel.classList.add("hidden");
+    metricBtn.addEventListener("click", () => {
       engagementPanel.classList.toggle("hidden");
-      const m = getMetrics();
-      const p = engagementPanel.querySelector("p");
-      if (p) {
-        p.innerHTML = `Button Clicks: ${m.buttonClicks}<br>Builder Actions: ${m.builderInteractions}`;
-      }
+      updateEngagementPanel();
     });
   }
 
   if (notesBtn && notesPanel) {
+    notesPanel.classList.add("hidden");
     notesBtn.addEventListener("click", () => {
       notesPanel.classList.toggle("hidden");
     });
   }
+}
+
+function updateVisitPanel() {
+  const m = getMetrics();
+  const span = document.getElementById("visitCountValue");
+  if (span) span.textContent = m.visits;
+}
+
+function updateEngagementPanel() {
+  const m = getMetrics();
+
+  const checkoutEl = document.getElementById("metricCheckoutClicks");
+  const ordersEl = document.getElementById("metricOrderAttempts");
+  const waiversEl = document.getElementById("metricWaiverDownloads");
+  const clicksEl = document.getElementById("metricTotalClicks");
+  const builderEl = document.getElementById("metricBuilderActions");
+
+  if (checkoutEl) checkoutEl.textContent = m.checkout;
+  if (ordersEl) ordersEl.textContent = m.orders;
+  if (waiversEl) waiversEl.textContent = m.waivers;
+  if (clicksEl) clicksEl.textContent = m.clicks;
+  if (builderEl) builderEl.textContent = m.builder;
 }
 
 /* ============================
@@ -250,7 +341,9 @@ document.addEventListener("DOMContentLoaded", () => {
   initF1();
   initAdmin();
 
-  incrementSiteVisits();
+  // site visit
+  incMetric("visits");
 
-  document.body.addEventListener("click", recordClick);
+  // global click tracking
+  document.body.addEventListener("click", () => incMetric("clicks"));
 });
