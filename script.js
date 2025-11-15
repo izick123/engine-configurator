@@ -1,241 +1,223 @@
-/* === Config === */
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "revlimit";
+/* ============================
+      GLOBAL THEME
+=============================== */
 
-/* === Theme toggling === */
 function setTheme(theme) {
-  document.documentElement.setAttribute("data-theme", theme === "light" ? "light" : "dark");
-  localStorage.setItem("spxTheme", theme);
-}
-function toggleTheme() {
-  const theme = localStorage.getItem("spxTheme") === "light" ? "dark" : "light";
-  setTheme(theme);
-}
-function initTheme() {
-  const saved = localStorage.getItem("spxTheme") || "dark";
-  setTheme(saved);
-  document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("spxTheme", theme);
 }
 
-/* === Builder === */
-function computeMaxHp() {
-  const baseSelect = document.getElementById("engineBase");
-  if (!baseSelect) return 0;
-  let maxHp = 0;
-  baseSelect.querySelectorAll("option").forEach(opt => {
-    maxHp = Math.max(maxHp, +opt.dataset.hp || 0);
-  });
-  const radioGroupMax = {};
-  document.querySelectorAll(".upgrade").forEach(up => {
-    if (up.type === "radio") {
-      radioGroupMax[up.name] = Math.max(radioGroupMax[up.name] || 0, +up.dataset.hp || 0);
+function initTheme() {
+    const saved = localStorage.getItem("spxTheme") || "dark";
+    setTheme(saved);
+
+    const toggle = document.getElementById("themeToggle");
+    if (toggle) {
+        toggle.addEventListener("click", () => {
+            const newTheme = localStorage.getItem("spxTheme") === "dark" ? "light" : "dark";
+            setTheme(newTheme);
+        });
     }
-  });
-  Object.values(radioGroupMax).forEach(hp => (maxHp += hp));
-  document.querySelectorAll(".upgrade[type=checkbox]").forEach(up => {
-    maxHp += +up.dataset.hp || 0;
-  });
-  return maxHp;
 }
+
+/* ============================
+      BUILDER PAGE
+=============================== */
 
 function updateBuild() {
-  const base = document.getElementById("engineBase");
-  let price = +base.selectedOptions[0].dataset.price || 0;
-  let hp = +base.selectedOptions[0].dataset.hp || 0;
-  document.querySelectorAll(".upgrade").forEach(up => {
-    if (up.checked) {
-      price += +up.dataset.price || 0;
-      hp += +up.dataset.hp || 0;
-    }
-  });
-  document.getElementById("totalPrice").textContent = price;
-  document.getElementById("totalHp").textContent = hp;
-  const progress = document.getElementById("hpProgress");
-  if (progress && window.MAX_HP) {
-    progress.style.width = Math.min(hp / window.MAX_HP * 100, 100) + "%";
-  }
-  // summary list
-  const list = document.getElementById("summaryList");
-  list.innerHTML = "";
-  const selected = [];
-  document.querySelectorAll(".upgrade").forEach(up => {
-    if (up.checked) {
-      const name = up.parentElement.textContent.trim();
-      if (+up.dataset.price || +up.dataset.hp) selected.push(name);
-    }
-  });
-  if (selected.length) {
-    selected.forEach(text => {
-      const li = document.createElement("li");
-      li.textContent = text;
-      list.appendChild(li);
+    const base = document.getElementById("engineBase");
+    if (!base) return;
+
+    let totalPrice = +base.selectedOptions[0].dataset.price;
+    let totalHp = +base.selectedOptions[0].dataset.hp;
+
+    document.querySelectorAll(".upgrade").forEach(up => {
+        if (up.checked) {
+            totalPrice += +up.dataset.price;
+            totalHp += +up.dataset.hp;
+        }
     });
-  } else {
-    const li = document.createElement("li");
-    li.textContent = "No upgrades selected.";
-    list.appendChild(li);
-  }
+
+    document.getElementById("totalPrice").textContent = totalPrice;
+    document.getElementById("totalHp").textContent = totalHp;
+
+    const progress = document.getElementById("hpProgress");
+    if (progress) {
+        const maxHp = 30; 
+        progress.style.width = Math.min((totalHp / maxHp) * 100, 100) + "%";
+    }
+
+    updateSummaryList();
+}
+
+function updateSummaryList() {
+    const list = document.getElementById("summaryList");
+    if (!list) return;
+
+    list.innerHTML = "";
+    const selectedUpgrades = [];
+
+    document.querySelectorAll(".upgrade").forEach(up => {
+        if (up.checked) {
+            selectedUpgrades.push(up.dataset.name);
+        }
+    });
+
+    if (selectedUpgrades.length === 0) {
+        list.innerHTML = "<li>No upgrades selected.</li>";
+    } else {
+        selectedUpgrades.forEach(name => {
+            const li = document.createElement("li");
+            li.textContent = name;
+            list.appendChild(li);
+        });
+    }
 }
 
 function initBuilder() {
-  const base = document.getElementById("engineBase");
-  if (!base) return;
-  window.MAX_HP = computeMaxHp();
-  base.addEventListener("change", updateBuild);
-  document.querySelectorAll(".upgrade").forEach(el => el.addEventListener("change", updateBuild));
-  updateBuild();
+    const base = document.getElementById("engineBase");
+    if (!base) return;
+
+    base.addEventListener("change", updateBuild);
+    document.querySelectorAll(".upgrade").forEach(up =>
+        up.addEventListener("change", updateBuild)
+    );
+
+    updateBuild();
 }
 
-/* === Waiver / Checkout === */
-function initWaiver() {
-  const modal = document.getElementById("waiverModal");
-  if (!modal) return;
-  document.getElementById("checkoutBtn").addEventListener("click", () => {
-    modal.setAttribute("aria-hidden", "false");
-    document.getElementById("agreeBox").checked = false;
-    document.getElementById("placeOrder").disabled = true;
-  });
-  document.getElementById("closeModal").addEventListener("click", () => modal.setAttribute("aria-hidden", "true"));
-  document.getElementById("agreeBox").addEventListener("change", e => {
-    document.getElementById("placeOrder").disabled = !e.target.checked;
-  });
-  document.getElementById("placeOrder").addEventListener("click", () => {
-    const email = prompt("Sorry, we are not taking orders currently.\nEnter your email to join our updates:");
-    if (email && email.includes("@")) {
-      const subject = encodeURIComponent("SPX order interest");
-      const body = encodeURIComponent(`Please add me to updates.\nEmail: ${email}`);
-      window.location.href = `mailto:spxengineering123@gmail.com?subject=${subject}&body=${body}`;
-    }
-    modal.setAttribute("aria-hidden", "true");
-  });
-  document.getElementById("downloadWaiver").addEventListener("click", () => {
-    const waiver = "SPX Engineering Waiver...";
-    const blob = new Blob([waiver], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "waiver.txt";
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-}
+/* ============================
+      CHECKOUT / WAIVER
+=============================== */
 
-/* === F1 Inquiry button === */
-function initF1() {
-  const btn = document.getElementById("inquireBtn");
-  if (btn) {
+function initCheckout() {
+    const btn = document.getElementById("checkoutBtn");
+    if (!btn) return;
+
     btn.addEventListener("click", () => {
-      const email = prompt("Enter your email to join SPX F1 updates:");
-      if (email && email.includes("@")) {
-        const subject = encodeURIComponent("F1 Series Kart interest");
-        const body = encodeURIComponent(`Please add me to the F1 mailing list.\nEmail: ${email}`);
-        window.location.href = `mailto:spxengineering123@gmail.com?subject=${subject}&body=${body}`;
-      }
+        const email = prompt(
+            "Sorry — SPX Engineering is not accepting orders yet.\n\nEnter your email to get updates:"
+        );
+
+        if (email && email.includes("@")) {
+            window.location.href =
+                `mailto:spxengineering123@gmail.com?subject=Order Interest&body=Please notify me of updates.%0D%0AEmail: ${email}`;
+        }
     });
-  }
 }
 
-/* === Admin === */
-function loadNotes() {
-  const notes = JSON.parse(localStorage.getItem("spxNotes") || "[]");
-  const list = document.getElementById("notesList");
-  list.innerHTML = "";
-  if (!notes.length) {
-    const li = document.createElement("li");
-    li.textContent = "No notes yet.";
-    li.className = "small muted";
-    list.appendChild(li);
-    return;
-  }
-  notes.forEach(note => {
-    const li = document.createElement("li");
-    li.className = "note-item";
-    if (note.image) {
-      const img = document.createElement("img");
-      img.src = note.image;
-      li.appendChild(img);
-    }
-    if (note.text) {
-      const p = document.createElement("p");
-      p.textContent = note.text;
-      li.appendChild(p);
-    }
-    list.appendChild(li);
-  });
+/* ============================
+      F1 PAGE
+=============================== */
+
+function initF1() {
+    const btn = document.getElementById("inquireBtn");
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+        const email = prompt("Enter your email for updates on the SPX F1 Kart:");
+
+        if (email && email.includes("@")) {
+            window.location.href =
+                `mailto:spxengineering123@gmail.com?subject=F1 Kart Interest&body=Email: ${email}`;
+        }
+    });
 }
 
-function saveNote() {
-  const fileInput = document.getElementById("noteImage");
-  const text = document.getElementById("noteText").value.trim();
-  if (!text && (!fileInput || !fileInput.files.length)) {
-    alert("Please enter text or choose an image.");
-    return;
-  }
-  const handleSave = imgData => {
-    const notes = JSON.parse(localStorage.getItem("spxNotes") || "[]");
-    notes.push({ text, image: imgData });
-    localStorage.setItem("spxNotes", JSON.stringify(notes));
-    document.getElementById("noteText").value = "";
-    if (fileInput) fileInput.value = "";
-    loadNotes();
-  };
-  if (fileInput && fileInput.files.length) {
-    const reader = new FileReader();
-    reader.onload = () => handleSave(reader.result);
-    reader.readAsDataURL(fileInput.files[0]);
-  } else {
-    handleSave(null);
-  }
+/* ============================
+      SITE VISITS + METRICS
+=============================== */
+
+function incrementSiteVisits() {
+    let visits = +localStorage.getItem("spx_visits") || 0;
+    visits++;
+    localStorage.setItem("spx_visits", visits);
 }
+
+function getMetrics() {
+    return {
+        visits: +localStorage.getItem("spx_visits") || 0,
+        buttonClicks: +localStorage.getItem("spx_clicks") || 0,
+        builderInteractions: +localStorage.getItem("spx_builder") || 0
+    };
+}
+
+function recordClick() {
+    let clicks = +localStorage.getItem("spx_clicks") || 0;
+    localStorage.setItem("spx_clicks", clicks + 1);
+}
+
+function recordBuilderInteract() {
+    let val = +localStorage.getItem("spx_builder") || 0;
+    localStorage.setItem("spx_builder", val + 1);
+}
+
+/* ============================
+      ADMIN PAGE
+=============================== */
 
 function initAdmin() {
-  const form = document.getElementById("adminLoginForm");
-  if (!form) return;
-  form.addEventListener("submit", e => {
-    e.preventDefault();
-    const user = document.getElementById("adminUser").value.trim();
-    const pass = document.getElementById("adminPass").value;
-    const status = document.getElementById("adminStatus");
-    if (user === ADMIN_USER && pass === ADMIN_PASS) {
-      status.textContent = "";
-      document.getElementById("adminDashboard").classList.remove("hidden");
-      form.classList.add("hidden");
-      // notes panel
-      document.getElementById("saveNote").addEventListener("click", saveNote);
-      loadNotes();
-      // toggle panels
-      const panels = {
-        visitPanel: document.getElementById("visitPanel"),
-        engagementPanel: document.getElementById("engagementPanel"),
-        notesPanel: document.getElementById("notesPanel")
-      };
-      Object.keys(panels).forEach(panelID => {
-        const btnID = "toggle" + panelID.charAt(0).toUpperCase() + panelID.slice(1);
-        const btn = document.getElementById(btnID);
-        const panel = panels[panelID];
-        if (btn && panel) {
-          btn.addEventListener("click", () => {
-            const isVisible = !panel.classList.contains("hidden");
-            Object.values(panels).forEach(p => p.classList.add("hidden"));
-            if (!isVisible) {
-              panel.classList.remove("hidden");
-              if (panelID === "notesPanel") loadNotes();
-            }
-          });
+    const form = document.getElementById("adminLoginForm");
+    if (!form) return;
+
+    form.addEventListener("submit", e => {
+        e.preventDefault();
+        const user = document.getElementById("adminUser").value;
+        const pass = document.getElementById("adminPass").value;
+
+        if (user === "admin" && pass === "revlimit") {
+            document.getElementById("adminDashboard").classList.remove("hidden");
+            form.classList.add("hidden");
+            initAdminButtons();
+        } else {
+            document.getElementById("adminStatus").textContent = "Invalid credentials.";
         }
-      });
-    } else {
-      status.textContent = "Invalid credentials.";
-    }
-  });
+    });
 }
 
-/* === Initialization === */
+function initAdminButtons() {
+    /* Show Visits */
+    document.getElementById("toggleVisitPanel").addEventListener("click", () => {
+        const panel = document.getElementById("visitPanel");
+        panel.classList.toggle("hidden");
+        panel.querySelector("p").textContent =
+            `Total site visits: ${getMetrics().visits}`;
+    });
+
+    /* Show Metrics */
+    document.getElementById("toggleEngagementPanel").addEventListener("click", () => {
+        const panel = document.getElementById("engagementPanel");
+        panel.classList.toggle("hidden");
+
+        const m = getMetrics();
+        panel.querySelector("p").innerHTML =
+            `Button Clicks: ${m.buttonClicks}<br>Builder Actions: ${m.builderInteractions}`;
+    });
+
+    /* Notes Panel */
+    document.getElementById("toggleNotesPanel").addEventListener("click", () => {
+        document.getElementById("notesPanel").classList.toggle("hidden");
+    });
+}
+
+/* ============================
+      GLOBAL INIT
+=============================== */
+
 document.addEventListener("DOMContentLoaded", () => {
-  initTheme();
-  initBuilder();
-  initWaiver();
-  initF1();
-  initAdmin();
-  wireFaq();  // your existing FAQ toggle logic
+    initTheme();
+    initBuilder();
+    initCheckout();
+    initF1();
+    initAdmin();
+
+    incrementSiteVisits();
+
+    /* attach global click counter */
+    document.body.addEventListener("click", recordClick);
+
+    /* builder interactions */
+    document.querySelectorAll(".upgrade").forEach(up =>
+        up.addEventListener("change", recordBuilderInteract)
+    );
 });
