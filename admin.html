@@ -2,94 +2,108 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SPX Engineering — Admin Dashboard</title>
-  <link rel="stylesheet" href="style.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPX Engineering — Admin</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body data-track-visit="false">
-  <!-- Header -->
-  <header class="site-header">
-    <div class="container header-inner">
-      <a href="./" class="brand-link" aria-label="SPX Engineering Home">
-        <img src="logo.png" alt="SPX Engineering" class="logo">
-      </a>
-      <nav class="nav">
-        <a href="./">Home</a>
-        <a href="builder.html">Builder</a>
-        <a href="faq.html">FAQ</a>
-        <a href="mailto:spxengineering123@gmail.com">Contact</a>
-        <a href="admin.html" aria-current="page">Admin</a>
-      </nav>
-      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
-        <span aria-hidden="true">🌓</span>
-      </button>
-    </div>
-  </header>
+<body>
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="./" class="brand-link">
+      <img src="logo.png" alt="SPX Engineering" class="logo" />
+    </a>
+    <nav class="nav">
+      <a href="./">Home</a>
+      <a href="builder.html">Builder</a>
+      <a href="faq.html">FAQ</a>
+      <a href="f1.html">F1 Kart</a>
+      <a href="admin.html" aria-current="page">Admin</a>
+    </nav>
+    <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">🌓</button>
+  </div>
+</header>
 
-  <main class="container">
-    <section class="card admin-card">
-      <h1>Admin Dashboard</h1>
-      <p>Log in to review the aggregated visit and engagement analytics collected across all devices.</p>
+<main class="container">
+  <section class="card admin-card">
+    <h1>Admin Dashboard</h1>
+    <p>Log in to view site metrics and tools.</p>
 
-      <form id="adminLoginForm" class="admin-form" novalidate>
-        <label>
-          Username
-          <input id="adminUser" name="username" type="text" autocomplete="username" required />
-        </label>
-        <label>
-          Password
-          <input id="adminPass" name="password" type="password" autocomplete="current-password" required />
-        </label>
-        <button type="submit" class="btn primary">Log In</button>
-        <p id="adminStatus" role="alert"></p>
-      </form>
+    <form id="adminLoginForm" class="admin-form">
+      <label>
+        Username
+        <input id="adminUser" type="text" autocomplete="username" required />
+      </label>
+      <label>
+        Password
+        <input id="adminPass" type="password" autocomplete="current-password" required />
+      </label>
+      <button type="submit" class="btn primary">Log In</button>
+      <p id="adminStatus" class="small muted"></p>
+    </form>
 
-      <div id="adminDashboard" class="admin-dashboard hidden" aria-live="polite">
-        <h2>Admin Menu</h2>
-        <p>Select a tool below to manage site utilities.</p>
-
-        <div class="admin-actions">
-          <button id="toggleVisitPanel" class="btn" type="button" aria-expanded="false" aria-controls="visitPanel">Site Visit Counter</button>
-          <button id="toggleEngagementPanel" class="btn" type="button" aria-expanded="false" aria-controls="engagementPanel">Engagement Metrics</button>
-        </div>
-
-        <!-- Visits -->
-        <section id="visitPanel" class="admin-panel hidden" aria-live="polite">
-          <h3>Site Visits</h3>
-          <p>Total visits recorded across all devices: <strong><span id="visitCount">0</span></strong></p>
-          <table id="visitHistoryTable" class="admin-table hidden" aria-describedby="visitHistoryNote">
-            <thead><tr><th scope="col">Date</th><th scope="col">Visits</th></tr></thead>
-            <tbody id="visitHistoryRows"></tbody>
-          </table>
-          <p id="visitHistoryEmpty" class="small muted">No daily history yet. Visit a page to start tracking.</p>
-          <button id="resetVisits" class="btn" type="button">Reset Counter &amp; History</button>
-          <p id="adminDashboardStatus" class="small"></p>
-          <p id="visitHistoryNote" class="small muted">Counts are stored remotely per day so the totals include every device that loads the site. If a visit occurs offline, it syncs when the browser reconnects.</p>
-        </section>
-
-        <!-- Engagement -->
-        <section id="engagementPanel" class="admin-panel hidden" aria-live="polite">
-          <h3>Engagement Metrics</h3>
-          <p class="small muted">Totals reflect actions recorded across every device. Offline actions are queued locally and synced when the connection returns.</p>
-          <ul class="metric-list">
-            <li><span>Checkout button clicks</span><strong id="metricCheckoutClicks">0</strong></li>
-            <li><span>Order confirmations attempted</span><strong id="metricOrderAttempts">0</strong></li>
-            <li><span>Waiver downloads</span><strong id="metricWaiverDownloads">0</strong></li>
-          </ul>
-          <button id="resetEngagement" class="btn" type="button">Reset Engagement Metrics</button>
-          <p id="engagementStatus" class="small"></p>
-        </section>
+    <div id="adminDashboard" class="admin-dashboard hidden">
+      <h2>Admin Tools</h2>
+      <div class="admin-actions">
+        <button id="toggleVisitPanel" class="btn" type="button">Site Visit Counter</button>
+        <button id="toggleEngagementPanel" class="btn" type="button">Engagement Metrics</button>
+        <button id="toggleNotesPanel" class="btn" type="button">Notes (optional)</button>
       </div>
-    </section>
-  </main>
 
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <div><strong>SPX Engineering</strong> — Hand-built, race-ready engines.</div>
-      <div class="small">Horsepower is estimated; actual horsepower may vary. For racing use only.</div>
-      <div class="small">Contact: <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a> • <a href="tel:+15555550123">(555) 555-0123</a></div>
+      <!-- Visits -->
+      <section id="visitPanel" class="admin-panel hidden">
+        <h3>Site Visits</h3>
+        <p>Total visits recorded: <strong id="visitCountValue">0</strong></p>
+      </section>
+
+      <!-- Engagement -->
+      <section id="engagementPanel" class="admin-panel hidden">
+        <h3>Engagement Metrics</h3>
+        <ul class="metric-list">
+          <li>
+            <span>Checkout button clicks</span>
+            <strong id="metricCheckoutClicks">0</strong>
+          </li>
+          <li>
+            <span>Order confirmations attempted</span>
+            <strong id="metricOrderAttempts">0</strong>
+          </li>
+          <li>
+            <span>Waiver downloads</span>
+            <strong id="metricWaiverDownloads">0</strong>
+          </li>
+          <li>
+            <span>Total page clicks</span>
+            <strong id="metricTotalClicks">0</strong>
+          </li>
+          <li>
+            <span>Builder interactions</span>
+            <strong id="metricBuilderActions">0</strong>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Notes (simple, optional) -->
+      <section id="notesPanel" class="admin-panel hidden">
+        <h3>Notes</h3>
+        <p class="small muted">You can extend this later to store notes; currently this is just a placeholder.</p>
+      </section>
     </div>
-  </footer>
-  <script src="script.js"></script>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div><strong>SPX Engineering</strong> — Hand-built racing engines.</div>
+    <div class="small">
+      Horsepower is estimated; actual horsepower may vary. For racing use only.
+    </div>
+    <div class="small">
+      Contact:
+      <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
 </body>
 </html>
