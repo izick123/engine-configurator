@@ -2,84 +2,141 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SPX Engineering — FAQ</title>
-  <link rel="stylesheet" href="style.css"/>
+  <title>SPX Engineering – FAQ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <!-- Header -->
+<body class="theme-dark">
   <header class="site-header">
-    <div class="container header-inner">
-      <a href="./" class="brand-link" aria-label="SPX Engineering Home">
-        <img src="logo.png" alt="SPX Engineering" class="logo">
-      </a>
-      <nav class="nav">
-        <a href="./">Home</a>
-        <a href="builder.html">Builder</a>
-        <a href="faq.html" aria-current="page">FAQ</a>
-        <a href="mailto:spxengineering123@gmail.com">Contact</a>
-        <a href="admin.html">Admin</a>
-      </nav>
-      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
-        <span aria-hidden="true">🌓</span>
-      </button>
-    </div>
+    <div class="logo">SPX Engineering</div>
+    <nav class="main-nav">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="builder.html">Engine Builder</a></li>
+        <li><a href="f1.html">F1 Series Kart</a></li>
+        <li><a href="faq.html" class="active">FAQ</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
   </header>
 
-  <main class="container">
-    <section class="card">
-      <h1>Frequently Asked Questions</h1>
-      <p class="small muted">Answers to some of the most common questions about our products and services.</p>
-      <div class="faq-item">
-        <h3>Are SPX engines street legal?</h3>
-        <p class="hidden">No. Our motors are designed exclusively for racing and off‑road use. They do not meet emissions or noise regulations for public roads.</p>
-      </div>
-      <div class="faq-item">
-        <h3>Can I run pump gasoline?</h3>
-        <p class="hidden">Yes. Our builds are tuned to run on high‑octane pump fuel. For maximum performance we recommend using fresh 91–93 octane fuel and quality synthetic oil.</p>
-      </div>
-      <div class="faq-item">
-        <h3>Do you offer a warranty?</h3>
-        <p class="hidden">We provide a limited warranty against manufacturing defects. Once any sealed component (such as the crankcase, carburetor or exhaust) is opened or the engine is operated, the warranty is void. Racing parts are inherently high‑stress and should be inspected regularly.</p>
-      </div>
-      <div class="faq-item">
-        <h3>Can I order replacement parts?</h3>
-        <p class="hidden">Absolutely. We stock all components used in our builds. You can contact us to order individual parts or upgrade kits. Please note that part installation is not covered under warranty.</p>
-      </div>
-      <div class="faq-item">
-        <h3>Do you ship internationally?</h3>
-        <p class="hidden">We currently ship within the United States. For international orders please email us — we can provide a custom quote and shipping options.</p>
-      </div>
-      <div class="faq-item">
-        <h3>I still have questions — how do I contact you?</h3>
-        <p class="hidden">Send us an email or use the form below. We're happy to help you design your dream engine.</p>
+  <main class="page">
+    <!-- Hero / Intro -->
+    <section class="section hero">
+      <div class="hero-content">
+        <h1>Frequently Asked Questions</h1>
+        <p class="muted">
+          Everything you wanted to know about SPX engines, tuning, and our
+          race-ready F1 style kart.
+        </p>
       </div>
     </section>
 
-    <!-- Contact form -->
-    <section class="card" id="contact-form">
-      <h2>Ask a question</h2>
-      <p class="small muted">Fill out the form and we'll respond as soon as possible.</p>
-      <!-- This form uses mailto so the message is sent directly to your inbox -->
-      <form action="mailto:spxengineering123@gmail.com" method="POST" enctype="text/plain" class="admin-form" style="max-width:480px">
-        <label>Email
-          <input type="email" name="Email" required placeholder="your@email.com" />
-        </label>
-        <label>Message
-          <textarea name="Message" required rows="5" placeholder="What can we help you with?" style="padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--muted); color:var(--text);"></textarea>
-        </label>
-        <button type="submit" class="btn primary">Send Message</button>
-      </form>
+    <!-- FAQ list -->
+    <section class="section" id="faq">
+      <div class="faq-grid">
+        <div class="card">
+          <h2>Engines & Builds</h2>
+
+          <details class="faq-item" open>
+            <summary>What engine sizes do you offer?</summary>
+            <p>
+              We currently offer three main displacements: 198cc, 212cc, and
+              224cc. Each has multiple trim levels with different internal
+              components, airflow, and exhaust options.
+            </p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Are these engines hand-built?</summary>
+            <p>
+              Yes. Every SPX engine is assembled by hand, with upgraded
+              components and clearances checked before it leaves our hands.
+            </p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Do you dyno test the engines?</summary>
+            <p>
+              Our racing engines are test-run and tuned. Premium builds include
+              dyno-tested power figures with a printout of the results.
+            </p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Is horsepower guaranteed?</summary>
+            <p>
+              Horsepower numbers are estimates based on our testing. Actual
+              power can vary depending on fuel, elevation, weather, and the
+              rest of your setup.
+            </p>
+          </details>
+        </div>
+
+        <div class="card">
+          <h2>Support & Warranty</h2>
+
+          <details class="faq-item" open>
+            <summary>What kind of support do you offer?</summary>
+            <p>
+              We offer startup and setup guidance, plus general tuning advice.
+              Once the engine is running and modified, responsibility for
+              maintenance and operation is on the owner.
+            </p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Do you offer a warranty?</summary>
+            <p>
+              Due to the racing nature of these engines, we offer very limited
+              warranty coverage. Any disassembly, internal modification, or
+              abuse will void the warranty immediately.
+            </p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Can you help me pick parts?</summary>
+            <p>
+              Yes. If you’re unsure what displacement or trim is right for your
+              kart, send us a message and tell us your goals. We’ll help you
+              spec a setup.
+            </p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Do you ship outside the U.S.?</summary>
+            <p>
+              At this time we are focused on U.S. customers only. If you are
+              outside the U.S., reach out and we can discuss options.
+            </p>
+          </details>
+        </div>
+      </div>
+
+      <!-- FAQ CTA -->
+      <div class="faq-cta card">
+        <h2>Still have questions?</h2>
+        <p class="small muted">
+          Ask us anything about SPX builds, tuning, or our F1-style kart. Your
+          message will go straight into the SPX admin inbox and we’ll respond
+          directly by email.
+        </p>
+        <!-- This now goes to the contact form page instead of mailto -->
+        <a href="contact.html" class="btn primary">
+          Ask a question
+        </a>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="container footer-inner">
-      <div><strong>SPX Engineering</strong> — Hand-built racing engines.</div>
-      <div class="small">Horsepower is estimated; actual horsepower may vary. For racing use only.</div>
-      <div class="small">Contact: <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a> • <a href="tel:+15555550123">(555) 555-0123</a></div>
-    </div>
+    <p class="small muted">
+      &copy; <span id="year"></span> SPX Engineering. Horsepower is estimated;
+      actual horsepower may vary. Always wear proper safety gear.
+    </p>
   </footer>
+
   <script src="script.js"></script>
+  <!-- messages.js not required here, since FAQ just links to contact.html -->
 </body>
 </html>
