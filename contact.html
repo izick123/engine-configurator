@@ -1,38 +1,120 @@
-<section class="section">
-  <h1>Contact SPX Engineering</h1>
-  <p class="muted small">
-    Have a question about a build, tuning, or F1 kart? Drop it here and
-    we’ll respond by email.
-  </p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SPX Engineering – Contact</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="theme-dark">
+  <!-- Header / Nav -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">SPX</span>
+        <span class="logo-text">SPX Engineering</span>
+      </a>
 
-  <form id="contactForm" class="card">
-    <div class="field">
-      <label for="contactName">Name</label>
-      <input id="contactName" type="text" required />
+      <nav class="main-nav">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="builder.html">Engine Builder</a></li>
+          <li><a href="f1.html">F1 Series Kart</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="contact.html" class="active">Contact</a></li>
+          <li>
+            <button id="themeToggle" class="icon-button" aria-label="Toggle theme">
+              <span class="theme-icon">🌓</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
     </div>
+  </header>
 
-    <div class="field">
-      <label for="contactEmail">Email</label>
-      <input id="contactEmail" type="email" required />
-    </div>
+  <main class="page">
+    <!-- Hero -->
+    <section class="section hero hero-subpage">
+      <div class="hero-content">
+        <h1>Contact SPX Engineering</h1>
+        <p class="muted">
+          Have a question about a build, tuning, or our F1 style kart? Send us a
+          message and we’ll reply directly via email.
+        </p>
+      </div>
+    </section>
 
-    <div class="field">
-      <label for="contactSubject">Subject</label>
-      <input id="contactSubject" type="text" required />
-    </div>
+    <!-- Contact Form -->
+    <section class="section">
+      <div class="grid-2 contact-grid">
+        <div class="card">
+          <h2>Send us a message</h2>
+          <p class="small muted">
+            Fill out the form below with as much detail as you can. We’ll use the
+            email you provide to respond. For engine builds, tell us about your kart,
+            intended use, and any goals for power or reliability.
+          </p>
 
-    <div class="field">
-      <label for="contactMessage">Message</label>
-      <textarea id="contactMessage" rows="5" required></textarea>
-    </div>
+          <form id="contactForm" class="form">
+            <div class="field">
+              <label for="contactName">Name</label>
+              <input id="contactName" type="text" required />
+            </div>
 
-    <button type="submit" class="btn primary">Send Message</button>
-    <p id="contactStatus" class="small muted"></p>
-  </form>
-</section>
+            <div class="field">
+              <label for="contactEmail">Email</label>
+              <input id="contactEmail" type="email" required />
+            </div>
 
-<!-- at bottom of the page, before </body> -->
-<script src="script.js"></script>
-<script src="messages.js"></script>
+            <div class="field">
+              <label for="contactSubject">Subject</label>
+              <input id="contactSubject" type="text" required />
+            </div>
+
+            <div class="field">
+              <label for="contactMessage">Message</label>
+              <textarea id="contactMessage" rows="5" required></textarea>
+            </div>
+
+            <button type="submit" class="btn primary">
+              Send Message
+            </button>
+
+            <p id="contactStatus" class="small muted"></p>
+          </form>
+        </div>
+
+        <!-- Sidebar info -->
+        <aside class="card">
+          <h2>What to include</h2>
+          <ul class="small muted bullet-list">
+            <li>Engine size or trim you’re interested in (198 / 212 / 224)</li>
+            <li>How you plan to use the kart (fun, racing, endurance, etc.)</li>
+            <li>Track type or terrain and typical conditions</li>
+            <li>Any existing modifications (carb, exhaust, gearing)</li>
+          </ul>
+
+          <h3>Current status</h3>
+          <p class="small muted">
+            We’re currently not accepting online orders directly through the
+            website. This form is the best way to ask questions, talk about
+            builds, or get on our radar for future availability.
+          </p>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="small muted">
+      &copy; <span id="year"></span> SPX Engineering. Horsepower is estimated;
+      actual horsepower may vary. Always wear proper safety gear.
+    </p>
+  </footer>
+
+  <!-- Attach main scripts -->
+  <script src="script.js"></script>
+  <!-- Attach backend contact/admin logic -->
+  <script src="messages.js"></script>
 </body>
 </html>
