@@ -1,99 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>SPX Engineering – FAQ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAQ – SPX Engineering</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
-<body class="theme-dark">
-  <header class="site-header">
-    <div class="header-inner">
-      <a href="index.html" class="logo">
-        <span class="logo-mark">SPX</span>
-        <span class="logo-text">SPX Engineering</span>
-      </a>
-      <nav class="main-nav">
-        <ul>
-          <li><a href="index.html">Home</a></li>
-          <li><a href="builder.html">Engine Builder</a></li>
-          <li><a href="f1.html">F1 Series Kart</a></li>
-          <li><a href="faq.html" class="active">FAQ</a></li>
-          <li><a href="contact.html">Contact</a></li>
-          <li>
-            <button id="themeToggle" class="icon-button" aria-label="Toggle theme">
-              <span class="theme-icon">🌓</span>
-            </button>
-          </li>
+
+<body>
+<header>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="index.html">
+                <img src="images/logo.png" alt="SPX Logo" class="nav-logo">
+            </a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="builder.html">Builder</a></li>
+            <li><a href="f1.html">F1 Series Kart</a></li>
+            <li><a class="active" href="faq.html">FAQ</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="admin.html">Admin</a></li>
         </ul>
-      </nav>
-    </div>
-  </header>
+        <button id="themeToggle" class="theme-toggle"></button>
+    </nav>
+</header>
 
-  <main class="page">
-    <section class="section hero hero-subpage">
-      <div class="hero-content">
+<main class="content-area">
+    <section class="faq-header">
         <h1>Frequently Asked Questions</h1>
-        <p class="muted">Answers about SPX engines, tuning, and our F1 kart.</p>
-      </div>
+        <p>Answers about SPX engines, tuning, warranty, and racing products.</p>
     </section>
 
-    <section class="section" id="faq">
-      <div class="grid-2 faq-grid">
-        <div class="card">
-          <h2>Engines & Builds</h2>
-          <details class="faq-item" open>
-            <summary>What engine sizes do you offer?</summary>
-            <p>We offer 198cc, 212cc, and 224cc platforms with multiple trims.</p>
-          </details>
-          <details class="faq-item"><summary>Are the engines hand-built?</summary>
-            <p>Yes—each engine is hand assembled with upgraded components.</p>
-          </details>
-          <details class="faq-item"><summary>Do you dyno test the engines?</summary>
-            <p>Premium builds are dyno-tested; others are test-run and tuned.</p>
-          </details>
-          <details class="faq-item"><summary>Is horsepower guaranteed?</summary>
-            <p>Numbers are estimates; actual horsepower varies with conditions.</p>
-          </details>
+    <section class="faq-list">
+
+        <div class="faq-item">
+            <h3>Do SPX engines come with a warranty?</h3>
+            <p>All SPX engines are built for racing use only and are not covered by warranty.</p>
         </div>
 
-        <div class="card">
-          <h2>Support & Warranty</h2>
-          <details class="faq-item" open>
-            <summary>What kind of support do you offer?</summary>
-            <p>We provide startup guidance and tuning advice; ongoing maintenance is up to the owner.</p>
-          </details>
-          <details class="faq-item"><summary>Do you offer a warranty?</summary>
-            <p>Racing engines have very limited coverage. Any non-SPX modifications or abuse voids coverage.</p>
-          </details>
-          <details class="faq-item"><summary>Can you help me choose the right engine?</summary>
-            <p>Yes—tell us about your kart, track type, and goals; we’ll recommend a trim.</p>
-          </details>
-          <details class="faq-item"><summary>Do you ship outside the U.S.?</summary>
-            <p>We currently focus on U.S. customers. Contact us to discuss options.</p>
-          </details>
+        <div class="faq-item">
+            <h3>How much horsepower will my engine make?</h3>
+            <p>Every engine combination varies. Our builder provides an estimate based on selected upgrades.</p>
         </div>
-      </div>
 
-      <!-- Call to action -->
-      <div class="faq-cta-wrapper">
-        <div class="card faq-cta">
-          <h2>Still have questions?</h2>
-          <p class="small muted">
-            Ask us anything about SPX builds, tuning, or our F1-style kart. Your message goes directly to our inbox—we’ll reply via email.
-          </p>
-          <a href="contact.html" class="btn primary">Ask a question</a>
+        <div class="faq-item">
+            <h3>Do you offer dyno testing?</h3>
+            <p>Dyno testing can be added as an optional service during your build.</p>
         </div>
-      </div>
+
+        <div class="faq-item">
+            <h3>Can I place an order right now?</h3>
+            <p>We are not currently accepting orders. You may join the waitlist on the checkout screen.</p>
+        </div>
+
     </section>
-  </main>
 
-  <footer class="site-footer">
-    <p class="small muted">
-      &copy; <span id="year"></span> SPX Engineering. Horsepower is estimated; actual horsepower may vary. Always wear proper safety gear.
-    </p>
-  </footer>
+    <section class="faq-question-box">
+        <h2>Still Have a Question?</h2>
+        <p>Send us your question below — you’ll get a response inside your SPX Admin dashboard.</p>
 
-  <script src="script.js"></script>
+        <form id="faqQuestionForm">
+            <input type="text" id="faqName" placeholder="Your Name" required>
+            <input type="email" id="faqEmail" placeholder="Your Email" required>
+            <textarea id="faqMessage" placeholder="Your Question..." required></textarea>
+            <button type="submit" class="btn-primary">Send Question</button>
+        </form>
+    </section>
+</main>
+
+<footer>
+    <p>© 2025 SPX Engineering — All rights reserved.</p>
+</footer>
+
+<script src="theme.js"></script>
+<script src="contact-submit.js"></script>
 </body>
 </html>
