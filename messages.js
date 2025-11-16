@@ -1,6 +1,5 @@
 // Set this to your backend URL.
-// Local dev:
-const API_BASE_URL = "http://localhost:4000";
+const API_BASE_URL = "https://spx-backend-nunl.onrender.com";
 // When you deploy backend to Render or similar, change it to that URL.
 
 // ----------------------
