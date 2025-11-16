@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
+
   <!-- Header -->
   <header class="site-header">
     <div class="container header-inner">
@@ -20,7 +21,7 @@
         <a href="contact.html" aria-current="page">Contact</a>
         <a href="admin.html">Admin</a>
       </nav>
-      <!-- Theme toggle button -->
+
       <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
         <span aria-hidden="true">🌓</span>
       </button>
@@ -36,6 +37,7 @@
   </section>
 
   <main class="container">
+
     <!-- Contact form -->
     <section class="card" style="margin-top: 20px; max-width: 720px; margin-inline: auto;">
       <h2>Send us a message</h2>
@@ -45,23 +47,30 @@
       </p>
 
       <form id="contactForm" class="stack" autocomplete="on">
+        
         <label>
           Name
-          <input type="text" id="name" name="name" required placeholder="Your name" />
+          <input type="text" id="contactName" name="name" required placeholder="Your name" />
         </label>
 
         <label>
           Email
-          <input type="email" id="email" name="email" required placeholder="you@example.com" />
+          <input type="email" id="contactEmail" name="email" required placeholder="you@example.com" />
+        </label>
+
+        <label>
+          Subject
+          <input type="text" id="contactSubject" name="subject" required placeholder="Subject" />
         </label>
 
         <label>
           Message
-          <textarea id="message" name="message" rows="5" required placeholder="Tell us what you're working on..."></textarea>
+          <textarea id="contactMessage" name="message" rows="5" required placeholder="Tell us what you're working on..."></textarea>
         </label>
 
         <button type="submit" class="btn primary">Send Message</button>
         <p id="contactStatus" class="small muted" aria-live="polite"></p>
+
       </form>
     </section>
   </main>
@@ -76,7 +85,7 @@
   </footer>
 
   <script src="script.js"></script>
-  <!-- If you have a dedicated contact JS (for posting to backend), include it here -->
-  <!-- <script src="messages.js"></script> -->
+  <script src="messages.js"></script>
+
 </body>
 </html>
