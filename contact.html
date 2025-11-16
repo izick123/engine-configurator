@@ -1,98 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>SPX Engineering – Contact</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact – SPX Engineering</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
-<body class="theme-dark">
-  <header class="site-header">
-    <div class="header-inner">
-      <a href="index.html" class="logo">
-        <span class="logo-mark">SPX</span>
-        <span class="logo-text">SPX Engineering</span>
-      </a>
-      <nav class="main-nav">
-        <ul>
-          <li><a href="index.html">Home</a></li>
-          <li><a href="builder.html">Engine Builder</a></li>
-          <li><a href="f1.html">F1 Series Kart</a></li>
-          <li><a href="faq.html">FAQ</a></li>
-          <li><a href="contact.html" class="active">Contact</a></li>
-          <li>
-            <button id="themeToggle" class="icon-button" aria-label="Toggle theme">
-              <span class="theme-icon">🌓</span>
-            </button>
-          </li>
-        </ul>
-      </nav>
-    </div>
-  </header>
 
-  <main class="page">
-    <section class="section hero hero-subpage">
-      <div class="hero-content">
-        <h1>Contact SPX Engineering</h1>
-        <p class="muted">Have a question about a build, tuning, or our F1-style kart? Send us a message and we’ll respond via email.</p>
-      </div>
-    </section>
+<body>
 
-    <section class="section">
-      <div class="grid-2 contact-grid">
-        <div class="card">
-          <h2>Send us a message</h2>
-          <p class="small muted">
-            Use the form below. Tell us your engine size/trim of interest, intended use, track type, and any mods. We’ll use your email to respond.
-          </p>
-          <form id="contactForm" class="form">
-            <div class="field">
-              <label for="contactName">Name</label>
-              <input id="contactName" type="text" required />
-            </div>
-            <div class="field">
-              <label for="contactEmail">Email</label>
-              <input id="contactEmail" type="email" required />
-            </div>
-            <div class="field">
-              <label for="contactSubject">Subject</label>
-              <input id="contactSubject" type="text" required />
-            </div>
-            <div class="field">
-              <label for="contactMessage">Message</label>
-              <textarea id="contactMessage" rows="5" required></textarea>
-            </div>
-            <button type="submit" class="btn primary">Send Message</button>
-            <p id="contactStatus" class="small muted"></p>
-          </form>
+<header>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="index.html">
+                <img src="images/logo.png" alt="SPX Logo" class="nav-logo">
+            </a>
         </div>
 
-        <!-- Sidebar guidelines -->
-        <aside class="card">
-          <h2>What to include</h2>
-          <ul class="small muted bullet-list">
-            <li>Your desired engine displacement or trim (198/212/224)</li>
-            <li>Your intended use (fun, racing, endurance, etc.)</li>
-            <li>Track/terrain details and typical conditions</li>
-            <li>Current modifications (carb, exhaust, gearing)</li>
-          </ul>
-          <h3>Current status</h3>
-          <p class="small muted">
-            We’re not processing orders through the site yet. This form is for questions, tuning advice, or to get on the waiting list.
-          </p>
-        </aside>
-      </div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="builder.html">Builder</a></li>
+            <li><a href="f1.html">F1 Series Kart</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a class="active" href="contact.html">Contact</a></li>
+            <li><a href="admin.html">Admin</a></li>
+        </ul>
+
+        <button id="themeToggle" class="theme-toggle"></button>
+    </nav>
+</header>
+
+<main class="content-area">
+
+    <section class="contact-header">
+        <h1>Contact SPX Engineering</h1>
+        <p>Have a question? Reach out and we’ll get back to you through our admin dashboard.</p>
     </section>
-  </main>
 
-  <footer class="site-footer">
-    <p class="small muted">
-      &copy; <span id="year"></span> SPX Engineering. Horsepower is estimated; actual horsepower may vary. Always wear proper safety gear.
-    </p>
-  </footer>
+    <section class="contact-form-section">
+        <form id="contactForm" class="contact-form">
+            
+            <label for="name">Your Name</label>
+            <input type="text" id="name" placeholder="John Doe" required>
 
-  <script src="script.js"></script>
-  <!-- messages.js handles the contact form -->
-  <script src="messages.js"></script>
+            <label for="email">Your Email</label>
+            <input type="email" id="email" placeholder="you@example.com" required>
+
+            <label for="message">Your Message</label>
+            <textarea id="message" placeholder="Type your message..." required></textarea>
+
+            <button type="submit" class="btn-primary">Send Message</button>
+        </form>
+    </section>
+
+</main>
+
+<footer>
+    <p>© 2025 SPX Engineering — All rights reserved.</p>
+</footer>
+
+<script src="theme.js"></script>
+<script src="contact-submit.js"></script>
+
 </body>
 </html>
