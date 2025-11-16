@@ -7,17 +7,23 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="theme-dark">
+ <!-- Header -->
   <header class="site-header">
-    <div class="logo">SPX Engineering</div>
-    <nav class="main-nav">
-      <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="builder.html">Engine Builder</a></li>
-        <li><a href="f1.html">F1 Series Kart</a></li>
-        <li><a href="faq.html" class="active">FAQ</a></li>
-        <li><a href="contact.html">Contact</a></li>
-      </ul>
-    </nav>
+    <div class="container header-inner">
+      <a href="./" class="brand-link" aria-label="SPX Engineering Home">
+        <img src="logo.png" alt="SPX Engineering" class="logo">
+      </a>
+      <nav class="nav">
+        <a href="./">Home</a>
+        <a href="builder.html" aria-current="page">Builder</a>
+        <a href="faq.html">FAQ</a>
+        <a href="contact.html">Contact</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
+        <span aria-hidden="true">🌓</span>
+      </button>
+    </div>
   </header>
 
   <main class="page">
