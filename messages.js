@@ -1,6 +1,29 @@
 // Set this to your backend URL.
 const API_BASE_URL = "https://spx-backend-nunl.onrender.com";
 // When you deploy backend to Render or similar, change it to that URL.
+// Reusable helper so any page can send a message to the backend.
+async function sendMessageToBackend({ name, email, subject, body }) {
+  const payload = { name, email, subject, body };
+
+  const res = await fetch(`${API_BASE_URL}/api/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  let data = {};
+  try {
+    data = await res.json();
+  } catch (e) {
+    // ignore JSON parse errors
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || "Error sending message");
+  }
+
+  return data;
+}
 
 // ----------------------
 // Admin auth handling
