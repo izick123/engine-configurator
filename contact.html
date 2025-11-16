@@ -1,0 +1,38 @@
+<section class="section">
+  <h1>Contact SPX Engineering</h1>
+  <p class="muted small">
+    Have a question about a build, tuning, or F1 kart? Drop it here and
+    we’ll respond by email.
+  </p>
+
+  <form id="contactForm" class="card">
+    <div class="field">
+      <label for="contactName">Name</label>
+      <input id="contactName" type="text" required />
+    </div>
+
+    <div class="field">
+      <label for="contactEmail">Email</label>
+      <input id="contactEmail" type="email" required />
+    </div>
+
+    <div class="field">
+      <label for="contactSubject">Subject</label>
+      <input id="contactSubject" type="text" required />
+    </div>
+
+    <div class="field">
+      <label for="contactMessage">Message</label>
+      <textarea id="contactMessage" rows="5" required></textarea>
+    </div>
+
+    <button type="submit" class="btn primary">Send Message</button>
+    <p id="contactStatus" class="small muted"></p>
+  </form>
+</section>
+
+<!-- at bottom of the page, before </body> -->
+<script src="script.js"></script>
+<script src="messages.js"></script>
+</body>
+</html>
