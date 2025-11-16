@@ -7,130 +7,139 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="theme-dark">
- <!-- Header -->
+  <!-- Header / Nav (matches other pages) -->
   <header class="site-header">
-    <div class="container header-inner">
-      <a href="./" class="brand-link" aria-label="SPX Engineering Home">
-        <img src="logo.png" alt="SPX Engineering" class="logo">
+    <div class="header-inner">
+      <a href="index.html" class="logo">
+        <!-- If you have a logo image, put it here -->
+        <span class="logo-mark">SPX</span>
+        <span class="logo-text">SPX Engineering</span>
       </a>
-      <nav class="nav">
-        <a href="./">Home</a>
-        <a href="builder.html" aria-current="page">Builder</a>
-        <a href="faq.html">FAQ</a>
-        <a href="contact.html">Contact</a>
-        <a href="admin.html">Admin</a>
+
+      <nav class="main-nav">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="builder.html">Engine Builder</a></li>
+          <li><a href="f1.html">F1 Series Kart</a></li>
+          <li><a href="faq.html" class="active">FAQ</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li>
+            <button id="themeToggle" class="icon-button" aria-label="Toggle theme">
+              <span class="theme-icon">🌓</span>
+            </button>
+          </li>
+        </ul>
       </nav>
-      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
-        <span aria-hidden="true">🌓</span>
-      </button>
     </div>
   </header>
 
   <main class="page">
-    <!-- Hero / Intro -->
-    <section class="section hero">
+    <!-- Hero -->
+    <section class="section hero hero-subpage">
       <div class="hero-content">
         <h1>Frequently Asked Questions</h1>
         <p class="muted">
-          Everything you wanted to know about SPX engines, tuning, and our
-          race-ready F1 style kart.
+          Answers to the most common questions about SPX engines, tuning, and our F1-style kart.
         </p>
       </div>
     </section>
 
-    <!-- FAQ list -->
+    <!-- FAQ content -->
     <section class="section" id="faq">
-      <div class="faq-grid">
+      <div class="grid-2 faq-grid">
+        <!-- Column: Engines & Builds -->
         <div class="card">
           <h2>Engines & Builds</h2>
 
           <details class="faq-item" open>
             <summary>What engine sizes do you offer?</summary>
             <p>
-              We currently offer three main displacements: 198cc, 212cc, and
-              224cc. Each has multiple trim levels with different internal
-              components, airflow, and exhaust options.
+              We currently offer three main displacements: 198cc, 212cc, and 224cc.
+              Each platform has multiple trim levels with different internal parts,
+              airflow, and exhaust options.
             </p>
           </details>
 
           <details class="faq-item">
-            <summary>Are these engines hand-built?</summary>
+            <summary>Are the engines hand-built?</summary>
             <p>
-              Yes. Every SPX engine is assembled by hand, with upgraded
-              components and clearances checked before it leaves our hands.
+              Yes. Every SPX engine is hand-assembled with upgraded components.
+              Clearances and critical fasteners are checked before it leaves our hands.
             </p>
           </details>
 
           <details class="faq-item">
             <summary>Do you dyno test the engines?</summary>
             <p>
-              Our racing engines are test-run and tuned. Premium builds include
-              dyno-tested power figures with a printout of the results.
+              Our higher trim engines are dyno-tested during development. Production
+              racing builds are test-run and tuned; some packages include a dyno
+              sheet with estimated horsepower.
             </p>
           </details>
 
           <details class="faq-item">
             <summary>Is horsepower guaranteed?</summary>
             <p>
-              Horsepower numbers are estimates based on our testing. Actual
-              power can vary depending on fuel, elevation, weather, and the
-              rest of your setup.
+              Horsepower numbers are estimates based on our testing. Actual power
+              can vary with fuel, elevation, weather, and the rest of your setup.
+              Always treat printed numbers as estimates, not guarantees.
             </p>
           </details>
         </div>
 
+        <!-- Column: Support & Warranty -->
         <div class="card">
           <h2>Support & Warranty</h2>
 
           <details class="faq-item" open>
             <summary>What kind of support do you offer?</summary>
             <p>
-              We offer startup and setup guidance, plus general tuning advice.
-              Once the engine is running and modified, responsibility for
-              maintenance and operation is on the owner.
+              We provide startup guidance, basic tuning tips, and recommendations
+              for safe use. Once the engine is running and modified, responsibility
+              for maintenance and operation is on the owner.
             </p>
           </details>
 
           <details class="faq-item">
             <summary>Do you offer a warranty?</summary>
             <p>
-              Due to the racing nature of these engines, we offer very limited
-              warranty coverage. Any disassembly, internal modification, or
-              abuse will void the warranty immediately.
+              Due to the racing use-case, coverage is very limited. Any internal
+              disassembly, non-SPX modifications, or abusive use voids coverage
+              immediately. Race parts are always “use at your own risk.”
             </p>
           </details>
 
           <details class="faq-item">
-            <summary>Can you help me pick parts?</summary>
+            <summary>Can you help me choose the right engine?</summary>
             <p>
-              Yes. If you’re unsure what displacement or trim is right for your
-              kart, send us a message and tell us your goals. We’ll help you
-              spec a setup.
+              Yes. Tell us your kart, track type, driver weight, and goals. We’ll
+              suggest a displacement and trim that fits what you’re trying to do.
             </p>
           </details>
 
           <details class="faq-item">
             <summary>Do you ship outside the U.S.?</summary>
             <p>
-              At this time we are focused on U.S. customers only. If you are
-              outside the U.S., reach out and we can discuss options.
+              We’re currently focused on U.S. customers. If you’re outside the U.S.,
+              send us a message and we can discuss possible options.
             </p>
           </details>
         </div>
       </div>
 
-      <!-- FAQ CTA -->
-      <div class="faq-cta card">
-        <h2>Still have questions?</h2>
-        <p class="small muted">
-          Ask us anything about SPX builds, tuning, or our F1-style kart. Your
-          message will go straight into the SPX admin inbox and we’ll respond
-          directly by email.
-        </p>
-        <!-- This now goes to the contact form page instead of mailto -->
-        <a href="contact.html" class="btn primary">
-          Ask a question
-        </a>
+      <!-- Call to Action -->
+      <div class="faq-cta-wrapper">
+        <div class="card faq-cta">
+          <h2>Still have questions?</h2>
+          <p class="small muted">
+            Ask us anything about SPX builds, tuning, or our F1-style kart. Your
+            message goes straight into the SPX admin inbox and we’ll respond via email.
+          </p>
+          <!-- This goes to the contact form page (no mailto) -->
+          <a href="contact.html" class="btn primary">
+            Ask a question
+          </a>
+        </div>
       </div>
     </section>
   </main>
@@ -143,6 +152,5 @@
   </footer>
 
   <script src="script.js"></script>
-  <!-- messages.js not required here, since FAQ just links to contact.html -->
 </body>
 </html>
