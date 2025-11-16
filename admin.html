@@ -2,108 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SPX Engineering — Admin</title>
+  <title>SPX Engineering – Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-<header class="site-header">
-  <div class="container header-inner">
-    <a href="./" class="brand-link">
-      <img src="logo.png" alt="SPX Engineering" class="logo" />
-    </a>
-    <nav class="nav">
-      <a href="./">Home</a>
-      <a href="builder.html">Builder</a>
-      <a href="faq.html">FAQ</a>
-      <a href="f1.html">F1 Kart</a>
-      <a href="admin.html" aria-current="page">Admin</a>
-    </nav>
-    <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">🌓</button>
-  </div>
-</header>
+<body class="theme-dark">
+  <header class="site-header">
+    <div class="logo">SPX Engineering – Admin</div>
+  </header>
 
-<main class="container">
-  <section class="card admin-card">
-    <h1>Admin Dashboard</h1>
-    <p>Log in to view site metrics and tools.</p>
+  <main class="page admin-page">
+    <section class="admin">
+      <h1>Admin Dashboard</h1>
 
-    <form id="adminLoginForm" class="admin-form">
-      <label>
-        Username
-        <input id="adminUser" type="text" autocomplete="username" required />
-      </label>
-      <label>
-        Password
-        <input id="adminPass" type="password" autocomplete="current-password" required />
-      </label>
-      <button type="submit" class="btn primary">Log In</button>
-      <p id="adminStatus" class="small muted"></p>
-    </form>
+      <!-- Login -->
+      <form id="adminLoginForm" class="card">
+        <div class="field">
+          <label for="adminUser">Username</label>
+          <input id="adminUser" type="text" required />
+        </div>
+        <div class="field">
+          <label for="adminPass">Password</label>
+          <input id="adminPass" type="password" required />
+        </div>
+        <button type="submit" class="btn primary">Log In</button>
+        <p id="adminStatus" class="small muted"></p>
+      </form>
 
-    <div id="adminDashboard" class="admin-dashboard hidden">
-      <h2>Admin Tools</h2>
-      <div class="admin-actions">
-        <button id="toggleVisitPanel" class="btn" type="button">Site Visit Counter</button>
-        <button id="toggleEngagementPanel" class="btn" type="button">Engagement Metrics</button>
-        <button id="toggleNotesPanel" class="btn" type="button">Notes (optional)</button>
+      <!-- Dashboard (hidden until login) -->
+      <div id="adminDashboard" class="admin-dashboard hidden">
+        <div class="admin-grid">
+          <aside class="admin-sidebar">
+            <h2>Messages</h2>
+            <ul id="messageList" class="message-list"></ul>
+
+            <section class="admin-metrics card">
+              <h2>Site Metrics</h2>
+              <p class="small">
+                Local site visits (this browser): <span id="siteVisitCount">0</span>
+              </p>
+              <button id="metricsButton" class="btn secondary">
+                Load engagement metrics
+              </button>
+              <pre id="metricsOutput" class="small muted metrics-output"></pre>
+            </section>
+          </aside>
+
+          <main class="admin-main">
+            <div id="messageEmptyHint" class="small muted">
+              Select a message to view details.
+            </div>
+
+            <div id="messageDetail">
+              <div id="messageMeta" class="message-meta"></div>
+              <pre id="messageBody" class="message-body"></pre>
+
+              <div id="messageReplies" class="message-replies"></div>
+
+              <form id="replyForm" class="reply-form hidden">
+                <label for="replyText">Reply</label>
+                <textarea id="replyText" rows="4"></textarea>
+                <button type="submit" class="btn primary">Send Reply</button>
+              </form>
+            </div>
+          </main>
+        </div>
       </div>
+    </section>
+  </main>
 
-      <!-- Visits -->
-      <section id="visitPanel" class="admin-panel hidden">
-        <h3>Site Visits</h3>
-        <p>Total visits recorded: <strong id="visitCountValue">0</strong></p>
-      </section>
-
-      <!-- Engagement -->
-      <section id="engagementPanel" class="admin-panel hidden">
-        <h3>Engagement Metrics</h3>
-        <ul class="metric-list">
-          <li>
-            <span>Checkout button clicks</span>
-            <strong id="metricCheckoutClicks">0</strong>
-          </li>
-          <li>
-            <span>Order confirmations attempted</span>
-            <strong id="metricOrderAttempts">0</strong>
-          </li>
-          <li>
-            <span>Waiver downloads</span>
-            <strong id="metricWaiverDownloads">0</strong>
-          </li>
-          <li>
-            <span>Total page clicks</span>
-            <strong id="metricTotalClicks">0</strong>
-          </li>
-          <li>
-            <span>Builder interactions</span>
-            <strong id="metricBuilderActions">0</strong>
-          </li>
-        </ul>
-      </section>
-
-      <!-- Notes (simple, optional) -->
-      <section id="notesPanel" class="admin-panel hidden">
-        <h3>Notes</h3>
-        <p class="small muted">You can extend this later to store notes; currently this is just a placeholder.</p>
-      </section>
-    </div>
-  </section>
-</main>
-
-<footer class="site-footer">
-  <div class="container footer-inner">
-    <div><strong>SPX Engineering</strong> — Hand-built racing engines.</div>
-    <div class="small">
-      Horsepower is estimated; actual horsepower may vary. For racing use only.
-    </div>
-    <div class="small">
-      Contact:
-      <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a>
-    </div>
-  </div>
-</footer>
-
-<script src="script.js"></script>
+  <script src="script.js"></script>
+  <script src="messages.js"></script>
 </body>
 </html>
