@@ -7,14 +7,12 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="theme-dark">
-  <!-- Header / Nav -->
   <header class="site-header">
     <div class="header-inner">
       <a href="index.html" class="logo">
         <span class="logo-mark">SPX</span>
         <span class="logo-text">SPX Engineering</span>
       </a>
-
       <nav class="main-nav">
         <ul>
           <li><a href="index.html">Home</a></li>
@@ -33,72 +31,54 @@
   </header>
 
   <main class="page">
-    <!-- Hero -->
     <section class="section hero hero-subpage">
       <div class="hero-content">
         <h1>Contact SPX Engineering</h1>
         <p class="muted">
-          Have a question about a build, tuning, or our F1 style kart? Send us a
-          message and we’ll reply directly via email.
+          Have a question about a build, tuning, or our F1-style kart? Send us a message and we’ll get back to you by email.
         </p>
       </div>
     </section>
 
-    <!-- Contact Form -->
     <section class="section">
       <div class="grid-2 contact-grid">
         <div class="card">
           <h2>Send us a message</h2>
           <p class="small muted">
-            Fill out the form below with as much detail as you can. We’ll use the
-            email you provide to respond. For engine builds, tell us about your kart,
-            intended use, and any goals for power or reliability.
+            Fill in the form below. Use as much detail as possible (engine size, trim, intended use, track type, existing mods).
           </p>
-
           <form id="contactForm" class="form">
             <div class="field">
               <label for="contactName">Name</label>
               <input id="contactName" type="text" required />
             </div>
-
             <div class="field">
               <label for="contactEmail">Email</label>
               <input id="contactEmail" type="email" required />
             </div>
-
             <div class="field">
               <label for="contactSubject">Subject</label>
               <input id="contactSubject" type="text" required />
             </div>
-
             <div class="field">
               <label for="contactMessage">Message</label>
               <textarea id="contactMessage" rows="5" required></textarea>
             </div>
-
-            <button type="submit" class="btn primary">
-              Send Message
-            </button>
-
+            <button type="submit" class="btn primary">Send Message</button>
             <p id="contactStatus" class="small muted"></p>
           </form>
         </div>
-
-        <!-- Sidebar info -->
         <aside class="card">
           <h2>What to include</h2>
           <ul class="small muted bullet-list">
-            <li>Engine size or trim you’re interested in (198 / 212 / 224)</li>
+            <li>Engine size or trim you’re interested in (198/212/224)</li>
             <li>How you plan to use the kart (fun, racing, endurance, etc.)</li>
             <li>Track type or terrain and typical conditions</li>
             <li>Any existing modifications (carb, exhaust, gearing)</li>
           </ul>
-
           <h3>Current status</h3>
           <p class="small muted">
-            We’re currently not accepting online orders directly through the
-            website. This form is the best way to ask questions, talk about
-            builds, or get on our radar for future availability.
+            We’re not currently taking orders through the site. Use this form to ask questions or get on our waiting list.
           </p>
         </aside>
       </div>
@@ -107,14 +87,11 @@
 
   <footer class="site-footer">
     <p class="small muted">
-      &copy; <span id="year"></span> SPX Engineering. Horsepower is estimated;
-      actual horsepower may vary. Always wear proper safety gear.
+      &copy; <span id="year"></span> SPX Engineering. Horsepower estimates may vary. Always wear proper safety gear.
     </p>
   </footer>
 
-  <!-- Attach main scripts -->
   <script src="script.js"></script>
-  <!-- Attach backend contact/admin logic -->
   <script src="messages.js"></script>
 </body>
 </html>
