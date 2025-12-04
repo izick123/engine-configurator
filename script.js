@@ -250,8 +250,13 @@ function initF1() {
 }
 
 /* ============================
-      ADMIN PAGE
-=============================== */
+      ADMIN PAGE (LEGACY)
+// ============================
+//
+// The legacy inline admin implementation (initAdmin) is still defined
+// below, but we no longer call it. The real admin dashboard is powered
+// by messages.js talking to the Render backend.
+//
 
 function initAdmin() {
   const form = document.getElementById("adminLoginForm");
@@ -277,57 +282,38 @@ function initAdmin() {
 
 function initAdminButtons() {
   const visitBtn = document.getElementById("toggleVisitPanel");
-  const metricBtn = document.getElementById("toggleEngagementPanel");
-  const notesBtn = document.getElementById("toggleNotesPanel");
-
+  const metricsBtn = document.getElementById("toggleMetricsPanel");
   const visitPanel = document.getElementById("visitPanel");
-  const engagementPanel = document.getElementById("engagementPanel");
-  const notesPanel = document.getElementById("notesPanel");
+  const metricsPanel = document.getElementById("metricsPanel");
 
   if (visitBtn && visitPanel) {
-    visitPanel.classList.add("hidden");
     visitBtn.addEventListener("click", () => {
       visitPanel.classList.toggle("hidden");
-      updateVisitPanel();
     });
   }
 
-  if (metricBtn && engagementPanel) {
-    engagementPanel.classList.add("hidden");
-    metricBtn.addEventListener("click", () => {
-      engagementPanel.classList.toggle("hidden");
-      updateEngagementPanel();
-    });
-  }
-
-  if (notesBtn && notesPanel) {
-    notesPanel.classList.add("hidden");
-    notesBtn.addEventListener("click", () => {
-      notesPanel.classList.toggle("hidden");
+  if (metricsBtn && metricsPanel) {
+    metricsBtn.addEventListener("click", () => {
+      metricsPanel.classList.toggle("hidden");
+      if (!metricsPanel.classList.contains("hidden")) {
+        renderLegacyMetrics();
+      }
     });
   }
 }
 
-function updateVisitPanel() {
+function renderLegacyMetrics() {
+  const out = document.getElementById("legacyMetrics");
+  if (!out) return;
+
   const m = getMetrics();
-  const span = document.getElementById("visitCountValue");
-  if (span) span.textContent = m.visits;
-}
-
-function updateEngagementPanel() {
-  const m = getMetrics();
-
-  const checkoutEl = document.getElementById("metricCheckoutClicks");
-  const ordersEl = document.getElementById("metricOrderAttempts");
-  const waiversEl = document.getElementById("metricWaiverDownloads");
-  const clicksEl = document.getElementById("metricTotalClicks");
-  const builderEl = document.getElementById("metricBuilderActions");
-
-  if (checkoutEl) checkoutEl.textContent = m.checkout;
-  if (ordersEl) ordersEl.textContent = m.orders;
-  if (waiversEl) waiversEl.textContent = m.waivers;
-  if (clicksEl) clicksEl.textContent = m.clicks;
-  if (builderEl) builderEl.textContent = m.builder;
+  out.textContent =
+    `Visits: ${m.visits}\n` +
+    `Clicks: ${m.clicks}\n` +
+    `Builder interactions: ${m.builder}\n` +
+    `Checkout opens: ${m.checkout}\n` +
+    `Orders (email prompts): ${m.orders}\n` +
+    `Waiver downloads: ${m.waivers}`;
 }
 
 /* ============================
@@ -339,7 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initBuilder();
   initCheckout();
   initF1();
-  initAdmin();
+  // initAdmin(); // legacy admin disabled; admin handled by messages.js
 
   // site visit
   incMetric("visits");
