@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
   <!-- Header -->
   <header class="site-header">
     <div class="container header-inner">
@@ -21,71 +20,96 @@
         <a href="contact.html" aria-current="page">Contact</a>
         <a href="admin.html">Admin</a>
       </nav>
-
-      <button id="themeToggle" class="icon-btn" aria-label="Toggle theme">
-        <span aria-hidden="true">🌓</span>
+      <!-- Theme toggle button -->
+      <button id="themeToggle" class="icon-btn" aria-label="Toggle dark mode">
+        🌓
       </button>
     </div>
   </header>
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="container hero-inner">
-      <h1>Contact SPX Engineering</h1>
-      <p>Questions about builds, tuning, or our F1 kart? Reach out and we’ll get back to you.</p>
+  <!-- Main -->
+  <main class="page contact-page">
+    <div class="container">
+      <section class="card">
+        <h1>Contact SPX Engineering</h1>
+        <p>
+          Have a question about a build, parts combo, or what it would take to
+          hit a certain horsepower number? Drop a message below and we'll get
+          back to you.
+        </p>
+
+        <p class="small muted">
+          Include as much detail as you can: engine size, current mods,
+          intended use, and anything else that helps us give you a useful answer.
+        </p>
+
+        <form id="contactForm" class="stack" autocomplete="on">
+          <label>
+            Name
+            <input type="text" id="name" name="name" required placeholder="Your name" />
+          </label>
+
+          <label>
+            Email
+            <input type="email" id="email" name="email" required placeholder="you@example.com" />
+          </label>
+
+          <label>
+            Message
+            <textarea
+              id="message"
+              name="message"
+              rows="5"
+              required
+              placeholder="Tell us what you're working on..."
+            ></textarea>
+          </label>
+
+          <p id="contactStatus" class="small muted" aria-live="polite"></p>
+
+          <button type="submit" class="btn primary">Send Message</button>
+        </form>
+      </section>
+
+      <section class="card secondary">
+        <h2>Other ways to reach us</h2>
+        <ul class="contact-list">
+          <li>
+            <strong>Email:</strong>
+            <a href="mailto:spxengineering123@gmail.com">
+              spxengineering123@gmail.com
+            </a>
+          </li>
+          <li>
+            <strong>Instagram:</strong>
+            <span>@spxengineering</span>
+          </li>
+          <li>
+            <strong>Location:</strong>
+            North woods of Wisconsin (testing grounds)
+          </li>
+        </ul>
+      </section>
     </div>
-  </section>
-
-  <main class="container">
-
-    <!-- Contact form -->
-    <section class="card" style="margin-top: 20px; max-width: 720px; margin-inline: auto;">
-      <h2>Send us a message</h2>
-      <p class="small muted">
-        Include as much detail as you can: engine size, current mods, intended use, and anything else
-        that helps us give you a useful answer.
-      </p>
-
-      <form id="contactForm" class="stack" autocomplete="on">
-        
-        <label>
-          Name
-          <input type="text" id="contactName" name="name" required placeholder="Your name" />
-        </label>
-
-        <label>
-          Email
-          <input type="email" id="contactEmail" name="email" required placeholder="you@example.com" />
-        </label>
-
-        <label>
-          Subject
-          <input type="text" id="contactSubject" name="subject" required placeholder="Subject" />
-        </label>
-
-        <label>
-          Message
-          <textarea id="contactMessage" name="message" rows="5" required placeholder="Tell us what you're working on..."></textarea>
-        </label>
-
-        <button type="submit" class="btn primary">Send Message</button>
-        <p id="contactStatus" class="small muted" aria-live="polite"></p>
-
-      </form>
-    </section>
   </main>
 
   <!-- Footer -->
   <footer class="site-footer">
     <div class="container footer-inner">
       <div><strong>SPX Engineering</strong> — Hand-built racing engines.</div>
-      <div class="small">Horsepower is estimated; actual horsepower may vary. For racing use only.</div>
-      <div class="small">Contact: <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a> • <a href="tel:+15555550123">(555) 555-0123</a></div>
+      <div class="small">
+        Horsepower is estimated; actual horsepower may vary. For racing use only.
+      </div>
+      <div class="small">
+        Contact:
+        <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a>
+        •
+        <a href="tel:+15555550123">(555) 555-0123</a>
+      </div>
     </div>
   </footer>
 
   <script src="script.js"></script>
   <script src="messages.js"></script>
-
 </body>
 </html>
