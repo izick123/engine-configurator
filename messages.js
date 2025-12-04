@@ -1,29 +1,7 @@
-// Set this to your backend URL.
+// Backend API base URL.
+// This is your deployed Render backend. All contact and admin requests
+// go through this API.
 const API_BASE_URL = "https://spx-backend-nunl.onrender.com";
-// When you deploy backend to Render or similar, change it to that URL.
-// Reusable helper so any page can send a message to the backend.
-async function sendMessageToBackend({ name, email, subject, body }) {
-  const payload = { name, email, subject, body };
-
-  const res = await fetch(`${API_BASE_URL}/api/messages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  let data = {};
-  try {
-    data = await res.json();
-  } catch (e) {
-    // ignore JSON parse errors
-  }
-
-  if (!res.ok) {
-    throw new Error(data.error || "Error sending message");
-  }
-
-  return data;
-}
 
 // ----------------------
 // Admin auth handling
@@ -31,16 +9,22 @@ async function sendMessageToBackend({ name, email, subject, body }) {
 let adminAuthHeader = null;
 
 function makeAuthHeader(user, pass) {
+  if (!user || !pass) return null;
   const token = btoa(`${user}:${pass}`);
-  return `Basic ${user}:${pass}` ? `Basic ${token}` : null;
+  return `Basic ${token}`;
 }
 
-// Small helper for fetch+JSON
+// Small helper for fetch + JSON with basic error handling.
 async function fetchJSON(url, options = {}) {
   const res = await fetch(url, options);
-  const data = await res.json().catch(() => ({}));
+  let data = {};
+  try {
+    data = await res.json();
+  } catch (_) {
+    // ignore JSON parsing issues; we'll still consider HTTP status
+  }
   if (!res.ok) {
-    throw new Error(data.error || "API error");
+    throw new Error(data.error || `Request failed with ${res.status}`);
   }
   return data;
 }
@@ -55,7 +39,7 @@ function incrementVisitCounter() {
     const next = current + 1;
     localStorage.setItem(key, String(next));
   } catch (_) {
-    // ignore
+    // ignore storage issues
   }
 }
 
@@ -65,45 +49,60 @@ function renderVisitCount() {
     const count = Number(localStorage.getItem(key) || "0");
     const el = document.getElementById("siteVisitCount");
     if (el) el.textContent = String(count);
-  } catch (_) {}
+  } catch (_) {
+    // ignore
+  }
 }
 
 // ----------------------
 // CONTACT FORM
 // ----------------------
+//
+// contact.html currently uses the following IDs:
+//   form:    #contactForm
+//   name:    #name
+//   email:   #email
+//   message: #message
+//   status:  #contactStatus
+//
+// The backend requires a "subject", so we synthesize one from the name.
 function initContactForm() {
   const form = document.getElementById("contactForm");
   if (!form) return;
 
-  const nameInput = document.getElementById("contactName");
-  const emailInput = document.getElementById("contactEmail");
-  const subjectInput = document.getElementById("contactSubject");
-  const messageInput = document.getElementById("contactMessage");
+  const nameInput = document.getElementById("name");
+  const emailInput = document.getElementById("email");
+  const messageInput = document.getElementById("message");
   const statusEl = document.getElementById("contactStatus");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (statusEl) statusEl.textContent = "";
 
-    const name = nameInput.value.trim();
-    const email = emailInput.value.trim();
-    const subject = subjectInput.value.trim();
-    const body = messageInput.value.trim();
+    const name = nameInput ? nameInput.value.trim() : "";
+    const email = emailInput ? emailInput.value.trim() : "";
+    const body = messageInput ? messageInput.value.trim() : "";
 
-    if (!name || !email || !subject || !body) {
+    if (!name || !email || !body) {
       if (statusEl) statusEl.textContent = "Please fill out all fields.";
       return;
     }
+
+    const subject = `Website contact from ${name}`;
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, subject, body })
+        body: JSON.stringify({ name, email, subject, body }),
       });
 
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {}
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Error sending message");
       }
 
@@ -136,8 +135,8 @@ function initAdminLogin() {
     e.preventDefault();
     if (statusEl) statusEl.textContent = "";
 
-    const user = userInput.value.trim();
-    const pass = passInput.value;
+    const user = userInput ? userInput.value.trim() : "";
+    const pass = passInput ? passInput.value : "";
 
     if (!user || !pass) {
       if (statusEl) statusEl.textContent = "Enter username and password.";
@@ -145,10 +144,14 @@ function initAdminLogin() {
     }
 
     const header = makeAuthHeader(user, pass);
+    if (!header) {
+      if (statusEl) statusEl.textContent = "Invalid credentials.";
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/check`, {
-        headers: { Authorization: header }
+        headers: { Authorization: header },
       });
 
       if (!res.ok) {
@@ -183,7 +186,7 @@ async function renderMessageList() {
 
   try {
     const messages = await fetchJSON(`${API_BASE_URL}/api/messages`, {
-      headers: { Authorization: adminAuthHeader }
+      headers: { Authorization: adminAuthHeader },
     });
 
     listEl.innerHTML = "";
@@ -193,7 +196,7 @@ async function renderMessageList() {
       li.textContent = "No messages yet.";
       li.className = "small muted";
       listEl.appendChild(li);
-      showMessageDetail(null);
+      showMessageDetail(true);
       return;
     }
 
@@ -260,7 +263,7 @@ async function loadMessageDetail(id) {
 
   try {
     const data = await fetchJSON(`${API_BASE_URL}/api/messages/${id}`, {
-      headers: { Authorization: adminAuthHeader }
+      headers: { Authorization: adminAuthHeader },
     });
 
     const msg = data.message;
@@ -310,24 +313,46 @@ function initAdminMessages() {
     if (!body) return;
 
     try {
-      await fetchJSON(
+      const res = await fetch(
         `${API_BASE_URL}/api/messages/${currentMessageId}/replies`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: adminAuthHeader
+            Authorization: adminAuthHeader,
           },
-          body: JSON.stringify({ body })
+          body: JSON.stringify({ body }),
         }
       );
 
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {}
+
+      if (!res.ok) {
+        // Backend stores the reply *before* attempting to send email.
+        // If email fails we still want the UI to refresh, but we let the
+        // admin know what happened.
+        await loadMessageDetail(currentMessageId);
+        await renderMessageList();
+        const msg =
+          data && data.error
+            ? data.error
+            : "Reply stored but the server reported an error.";
+        alert(msg);
+        return;
+      }
+
+      // Success: reply stored and email sent.
       replyText.value = "";
       await loadMessageDetail(currentMessageId);
       await renderMessageList();
     } catch (err) {
       console.error(err);
-      alert("Failed to send reply: " + err.message);
+      alert(
+        "There was a problem talking to the server. The reply may or may not have been stored."
+      );
     }
   });
 }
@@ -340,14 +365,14 @@ function initAdminMetrics() {
 
   const btn = document.getElementById("metricsButton");
   const out = document.getElementById("metricsOutput");
-  if (!btn || !out) return;
+  if (!btn || !out || !adminAuthHeader) return;
 
   btn.addEventListener("click", async () => {
     out.textContent = "Loading metrics…";
 
     try {
       const messages = await fetchJSON(`${API_BASE_URL}/api/messages`, {
-        headers: { Authorization: adminAuthHeader }
+        headers: { Authorization: adminAuthHeader },
       });
 
       const total = messages.length;
