@@ -10,29 +10,33 @@ import { open } from "sqlite";
 dotenv.config();
 
 const app = express();
-
-// ----------------------------
-// Config
-// ----------------------------
 const PORT = Number(process.env.PORT || 10000);
 
-// Admin credentials (set in Render env vars)
+// ----------------------------
+// Admin config (Render env vars)
+// ----------------------------
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ""; // SET THIS IN RENDER
-const ADMIN_TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || crypto.randomBytes(32).toString("hex");
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ""; // MUST be set in Render
+const ADMIN_TOKEN_SECRET =
+  process.env.ADMIN_TOKEN_SECRET || crypto.randomBytes(32).toString("hex");
 
-// Email settings:
-// Prefer SMTP_* if provided, otherwise use Gmail vars.
-// (Render env vars can use either set.)
+// ----------------------------
+// Email config
+// Supports either SMTP_* OR GMAIL_* env vars
+// ----------------------------
 const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
 const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
 const SMTP_SECURE = String(process.env.SMTP_SECURE || "false").toLowerCase() === "true";
+
 const SMTP_USER = process.env.SMTP_USER || process.env.GMAIL_USER || "";
 const SMTP_PASS = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || "";
+
 const FROM_EMAIL = process.env.SMTP_FROM || process.env.FROM_EMAIL || SMTP_USER || "no-reply@spxengineering.com";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || SMTP_USER || "";
 
-// SQLite path
+// ----------------------------
+// DB config
+// ----------------------------
 const DB_PATH = process.env.DB_PATH || "spx.db";
 
 // ----------------------------
@@ -40,7 +44,7 @@ const DB_PATH = process.env.DB_PATH || "spx.db";
 // ----------------------------
 app.use(express.json());
 
-// CORS: allow your site + localhost
+// Allow your site + common local dev origins
 const allowedOrigins = [
   "https://spxengineering.com",
   "https://www.spxengineering.com",
@@ -52,7 +56,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, cb) => {
-      // allow server-to-server, curl, or no-origin requests
       if (!origin) return cb(null, true);
       if (allowedOrigins.includes(origin)) return cb(null, true);
       return cb(new Error("CORS blocked"), false);
@@ -79,7 +82,7 @@ await db.exec(`
 `);
 
 // ----------------------------
-// Email init
+// Email helper
 // ----------------------------
 function getTransporter() {
   if (!SMTP_USER || !SMTP_PASS) return null;
@@ -88,39 +91,34 @@ function getTransporter() {
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_SECURE,
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS,
-    },
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
   });
 }
 
-async function sendEmailNotification({ name, email, message }) {
+async function sendAdminNotification({ name, email, message }) {
   const transporter = getTransporter();
   if (!transporter) {
     console.log("Email not configured: missing SMTP_USER/SMTP_PASS (or GMAIL_USER/GMAIL_APP_PASSWORD).");
-    return { sent: false, reason: "Email not configured" };
+    return;
   }
 
-  const subject = `New SPX Contact Message from ${name}`;
-  const text = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}\n`;
-
   const to = ADMIN_EMAIL || SMTP_USER;
-  if (!to) return { sent: false, reason: "No admin email configured" };
+  if (!to) {
+    console.log("Email not configured: missing ADMIN_EMAIL / SMTP_USER.");
+    return;
+  }
 
   await transporter.sendMail({
     from: FROM_EMAIL,
     to,
     replyTo: email,
-    subject,
-    text,
+    subject: `New SPX Contact Message from ${name}`,
+    text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}\n`,
   });
-
-  return { sent: true };
 }
 
 // ----------------------------
-// Auth helpers
+// Token helpers (simple signed token)
 // ----------------------------
 function signAdminToken(payload) {
   const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
@@ -169,6 +167,7 @@ app.get("/health", (req, res) => {
   res.json({ ok: true, uptime: process.uptime() });
 });
 
+// Save a contact message
 app.post("/api/messages", async (req, res) => {
   try {
     const name = String(req.body?.name || "").trim();
@@ -186,9 +185,9 @@ app.post("/api/messages", async (req, res) => {
       [name, email, message, created_at]
     );
 
-    // Send email notification (don’t block the request on email)
-    sendEmailNotification({ name, email, message })
-      .then((r) => console.log("Email result:", r))
+    // send email notification in background
+    sendAdminNotification({ name, email, message })
+      .then(() => console.log("Admin notification email queued/sent."))
       .catch((e) => console.log("Email send error:", e?.message || e));
 
     return res.json({ ok: true });
@@ -198,7 +197,7 @@ app.post("/api/messages", async (req, res) => {
   }
 });
 
-// Admin login (returns token)
+// Admin login
 app.post("/api/admin/login", async (req, res) => {
   const username = String(req.body?.username || "").trim();
   const password = String(req.body?.password || "");
@@ -211,26 +210,24 @@ app.post("/api/admin/login", async (req, res) => {
     return res.status(401).json({ error: "Invalid credentials." });
   }
 
-  const token = signAdminToken({
-    role: "admin",
-    username,
-    iat: Date.now(),
-  });
-
+  const token = signAdminToken({ role: "admin", username, iat: Date.now() });
   return res.json({ ok: true, token });
 });
 
 // Admin list messages
 app.get("/api/admin/messages", requireAdmin, async (req, res) => {
   try {
-    const rows = await db.all(`SELECT id, name, email, message, created_at FROM messages ORDER BY id DESC LIMIT 200`);
+    const rows = await db.all(
+      `SELECT id, name, email, message, created_at FROM messages ORDER BY id DESC LIMIT 200`
+    );
     return res.json({ ok: true, messages: rows });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Server error reading messages." });
   }
 });
-// Admin reply to a message (send email back to the user)
+
+// Admin reply to a user (send email)
 app.post("/api/admin/reply", requireAdmin, async (req, res) => {
   try {
     const to = String(req.body?.to || "").trim();
