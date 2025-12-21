@@ -5,74 +5,163 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SPX Engineering - Admin</title>
   <style>
-    body { font-family: Arial, sans-serif; background:#111; color:#eee; padding:24px; }
-    .card { max-width: 900px; margin: 0 auto; background:#1b1b1b; padding:20px; border-radius:10px; }
-    label { display:block; margin-top:12px; }
-    input { width: 280px; padding:10px; border-radius:6px; border:1px solid #333; background:#0f0f0f; color:#eee; }
-    button { margin-top: 14px; padding:10px 16px; border:0; border-radius:6px; cursor:pointer; background:#f0c34a; color:#111; font-weight:700; }
-    #loginStatus, #status { margin-top: 10px; color:#ddd; }
-    .row { display:flex; gap:20px; flex-wrap: wrap; }
+    :root {
+      --bg: #0f0f0f;
+      --panel: #1a1a1a;
+      --panel2: #141414;
+      --text: #eaeaea;
+      --muted: #bdbdbd;
+      --border: #2b2b2b;
+      --accent: #f0c34a;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
+
+    /* Header */
+    .site-header { background: #0b0b0b; border-bottom: 1px solid var(--border); }
+    .header-inner { max-width: 1100px; margin: 0 auto; padding: 14px 18px; display: flex; align-items: center; gap: 16px; }
+    .brand { font-weight: 800; letter-spacing: 0.3px; }
+    .brand a { color: var(--text); text-decoration: none; }
+    .nav { margin-left: auto; display: flex; gap: 14px; flex-wrap: wrap; }
+    .nav a { color: var(--muted); text-decoration: none; padding: 8px 10px; border-radius: 8px; }
+    .nav a:hover { background: #121212; color: var(--text); }
+    .nav a.active { background: #121212; color: var(--text); border: 1px solid var(--border); }
+
+    /* Page */
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 22px 18px 40px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    p { margin: 0 0 14px; color: var(--muted); line-height: 1.4; }
+    label { display:block; margin-top:12px; margin-bottom:6px; color: var(--muted); }
+    input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel2);
+      color: var(--text);
+      outline: none;
+    }
+    input:focus, textarea:focus { border-color: #3a3a3a; }
+
+    .row { display:flex; gap: 14px; flex-wrap: wrap; align-items: end; }
+    .col { flex: 1; min-width: 220px; }
+
+    button {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      background: var(--accent);
+      color: #111;
+      font-weight: 800;
+    }
+    button.secondary {
+      background: #2a2a2a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-weight: 700;
+    }
+
+    .status { margin-top: 10px; color: var(--muted); }
+    .tiny { margin-top: 6px; font-size: 12px; color: #9b9b9b; }
+
     .hidden { display:none; }
+
     table { width:100%; border-collapse: collapse; margin-top: 16px; }
-    th, td { border-bottom: 1px solid #333; padding: 10px; text-align:left; vertical-align: top; }
-    th { color:#ccc; }
-    pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; }
-    .small { font-size: 12px; color:#aaa; margin-top: 8px; }
-    .replyBox { margin-top: 10px; background:#121212; border:1px solid #333; padding:12px; border-radius:8px; }
-    .replyBox input, .replyBox textarea { width:100%; margin-top:8px; }
-    .replyActions { display:flex; gap:10px; margin-top:10px; }
-    .smallBtn { padding:8px 12px; border-radius:6px; border:0; cursor:pointer; background:#333; color:#eee; }
-    .smallBtn.primary { background:#f0c34a; color:#111; font-weight:700; }
+    th, td { border-bottom: 1px solid var(--border); padding: 10px; text-align:left; vertical-align: top; }
+    th { color:#cfcfcf; font-weight: 800; }
+    pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; color: #e6e6e6; }
+
+    .replyBox {
+      margin-top: 10px;
+      background: #121212;
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 12px;
+    }
+    .replyActions { display:flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+    .replyActions .small { font-size: 12px; color: #a0a0a0; }
+
+    .footer { max-width: 1100px; margin: 20px auto 0; padding: 0 18px 20px; color: #777; font-size: 12px; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Admin Dashboard</h1>
 
-    <div id="loginBox">
-      <form id="adminLoginForm">
-        <div class="row">
-          <div>
-            <label for="username">Username</label>
-            <input id="username" autocomplete="username" required />
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand"><a href="/">SPX Engineering</a></div>
+      <nav class="nav">
+        <a href="/">Home</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/admin.html" class="active">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="card">
+      <h1>Admin Dashboard</h1>
+      <p>Log in to view messages and reply.</p>
+
+      <!-- Login -->
+      <div id="loginBox">
+        <form id="adminLoginForm">
+          <div class="row">
+            <div class="col">
+              <label for="username">Username</label>
+              <input id="username" autocomplete="username" required />
+            </div>
+            <div class="col">
+              <label for="password">Password</label>
+              <input id="password" type="password" autocomplete="current-password" required />
+            </div>
+            <div class="col" style="flex: 0 0 auto; min-width: 160px;">
+              <button type="submit">Log In</button>
+            </div>
           </div>
-          <div>
-            <label for="password">Password</label>
-            <input id="password" type="password" autocomplete="current-password" required />
+
+          <div class="status" id="loginStatus"></div>
+          <div class="tiny" id="loginDebug"></div>
+        </form>
+      </div>
+
+      <!-- Admin -->
+      <div id="adminBox" class="hidden">
+        <div class="row" style="margin-top: 12px;">
+          <div class="col" style="flex: 0 0 auto; min-width: 160px;">
+            <button id="refreshBtn" type="button">Refresh</button>
+          </div>
+          <div class="col" style="flex: 0 0 auto; min-width: 160px;">
+            <button id="logoutBtn" type="button" class="secondary">Log Out</button>
+          </div>
+          <div class="col">
+            <div class="status" id="status"></div>
           </div>
         </div>
 
-        <button type="submit">Log In</button>
-        <div id="loginStatus"></div>
-        <div class="small" id="loginDebug"></div>
-      </form>
-    </div>
-
-    <div id="adminBox" class="hidden">
-      <div class="row">
-        <button id="refreshBtn" type="button">Refresh Messages</button>
-        <button id="logoutBtn" type="button">Log Out</button>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 170px;">Time</th>
+              <th style="width: 160px;">Name</th>
+              <th style="width: 240px;">Email</th>
+              <th>Message / Reply</th>
+            </tr>
+          </thead>
+          <tbody id="messagesBody"></tbody>
+        </table>
       </div>
-
-      <div id="status"></div>
-
-      <table>
-        <thead>
-          <tr>
-            <th style="width:160px;">Time</th>
-            <th style="width:160px;">Name</th>
-            <th style="width:220px;">Email</th>
-            <th>Message</th>
-          </tr>
-        </thead>
-        <tbody id="messagesBody"></tbody>
-      </table>
     </div>
-  </div>
+  </main>
+
+  <div class="footer">© <span id="year"></span> SPX Engineering</div>
 
   <script>
-    // IMPORTANT: set this to your current Render backend URL
-    const API_BASE = "https://spx-backend-akqu.onrender.com"; // <-- CHANGE IF NEEDED
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Your Render backend:
+    const API_BASE = "https://spx-backend-akqu.onrender.com";
 
     function setText(id, txt) {
       const el = document.getElementById(id);
@@ -132,19 +221,79 @@
 
       for (const r of rows) {
         const tr = document.createElement("tr");
+
+        const safeName = (r.name || "").replace(/</g, "&lt;");
+        const safeEmail = (r.email || "").replace(/</g, "&lt;");
+        const safeMsg = (r.message || "").replace(/</g, "&lt;");
+        const created = formatDate(r.created_at);
+
         tr.innerHTML = `
-          <td>${formatDate(r.created_at)}</td>
-          <td>${(r.name || "").replace(/</g, "&lt;")}</td>
-          <td>${(r.email || "").replace(/</g, "&lt;")}</td>
-          <td><pre>${(r.message || "").replace(/</g, "&lt;")}</pre></td>
+          <td>${created}</td>
+          <td>${safeName}</td>
+          <td>${safeEmail}</td>
+          <td>
+            <pre>${safeMsg}</pre>
+
+            <div class="replyBox">
+              <div><strong>Reply</strong> → ${safeEmail}</div>
+
+              <label>Subject</label>
+              <input type="text" class="replySubject" value="Re: SPX Engineering" />
+
+              <label>Message</label>
+              <textarea class="replyBody" rows="5">Hi ${safeName || "there"},\n\n</textarea>
+
+              <div class="replyActions">
+                <button type="button" class="sendReplyBtn">Send Reply</button>
+                <span class="small replyStatus"></span>
+              </div>
+            </div>
+          </td>
         `;
+
+        const sendBtn = tr.querySelector(".sendReplyBtn");
+        const subjEl = tr.querySelector(".replySubject");
+        const bodyEl = tr.querySelector(".replyBody");
+        const statusEl = tr.querySelector(".replyStatus");
+
+        sendBtn.addEventListener("click", async () => {
+          const token = localStorage.getItem("spx_admin_token");
+          statusEl.textContent = "Sending...";
+
+          try {
+            await postJSON("/api/admin/reply", {
+              to: r.email,
+              subject: subjEl.value.trim(),
+              body: bodyEl.value
+            }, token);
+
+            statusEl.textContent = "Sent ✅";
+          } catch (err) {
+            console.error(err);
+            statusEl.textContent = `Error: ${err.message}`;
+          }
+        });
+
         tbody.appendChild(tr);
       }
     }
 
-    // ---- Login ----
-    const loginForm = document.getElementById("adminLoginForm");
-    loginForm.addEventListener("submit", async (e) => {
+    async function loadMessages() {
+      const token = localStorage.getItem("spx_admin_token");
+      setText("status", "Loading messages...");
+
+      try {
+        const data = await getJSON("/api/admin/messages", token);
+        renderMessages(data.messages);
+        setText("status", `Loaded ${data.messages.length} messages ✅`);
+      } catch (err) {
+        console.error(err);
+        setText("status", `Error: ${err.message}`);
+      }
+    }
+
+    // Login
+    document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       setText("loginStatus", "Logging in...");
       setText("loginDebug", "");
@@ -165,7 +314,7 @@
       }
     });
 
-    // ---- Logout ----
+    // Logout
     document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.removeItem("spx_admin_token");
       showAdminUI(false);
@@ -173,24 +322,10 @@
       renderMessages([]);
     });
 
-    // ---- Refresh ----
+    // Refresh
     document.getElementById("refreshBtn").addEventListener("click", loadMessages);
 
-    async function loadMessages() {
-      const token = localStorage.getItem("spx_admin_token");
-      setText("status", "Loading messages...");
-
-      try {
-        const data = await getJSON("/api/admin/messages", token);
-        renderMessages(data.messages);
-        setText("status", `Loaded ${data.messages.length} messages ✅`);
-      } catch (err) {
-        console.error(err);
-        setText("status", `Error: ${err.message}`);
-      }
-    }
-
-    // ---- On load: if token exists, try loading ----
+    // Auto-load if token exists
     (async function init() {
       const token = localStorage.getItem("spx_admin_token");
       if (!token) return;
