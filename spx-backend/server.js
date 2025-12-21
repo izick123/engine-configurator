@@ -95,7 +95,21 @@ app.post('/api/messages', async (req, res) => {
 // Endpoint to fetch all messages (admin)
 app.get('/api/messages', basicAuth, async (req, res) => {
   try {
-    const messages = await db.all('SELECT * FROM messages ORDER BY id DESC');
+    const messages = await db.all(
+      `SELECT
+        m.*,
+        m.timestamp AS created_at,
+        CASE
+          WHEN EXISTS (
+            SELECT 1
+            FROM replies r
+            WHERE r.messageId = m.id
+          ) THEN 'answered'
+          ELSE 'new'
+        END AS status
+      FROM messages m
+      ORDER BY m.id DESC`
+    );
     res.json(messages);
   } catch (err) {
     console.error(err);
@@ -106,10 +120,28 @@ app.get('/api/messages', basicAuth, async (req, res) => {
 // Endpoint to fetch a single message and its replies (admin)
 app.get('/api/messages/:id', basicAuth, async (req, res) => {
   try {
-    const msg = await db.get('SELECT * FROM messages WHERE id = ?', [req.params.id]);
+    const msg = await db.get(
+      `SELECT
+        m.*,
+        m.timestamp AS created_at,
+        CASE
+          WHEN EXISTS (
+            SELECT 1
+            FROM replies r
+            WHERE r.messageId = m.id
+          ) THEN 'answered'
+          ELSE 'new'
+        END AS status
+      FROM messages m
+      WHERE m.id = ?`,
+      [req.params.id]
+    );
     if (!msg) return res.status(404).json({ error: 'Not found' });
-    const replies = await db.all('SELECT * FROM replies WHERE messageId = ?', [req.params.id]);
-    res.json({ ...msg, replies });
+    const replies = await db.all(
+      'SELECT *, timestamp AS created_at FROM replies WHERE messageId = ?',
+      [req.params.id]
+    );
+    res.json({ message: msg, replies });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -142,18 +174,42 @@ app.post('/api/messages/:id/reply', basicAuth, async (req, res) => {
   }
 });
 
+app.post('/api/messages/:id/replies', basicAuth, async (req, res) => {
+  const { body } = req.body;
+  if (!body) {
+    return res.status(400).json({ error: 'Reply body is required' });
+  }
+  try {
+    const msg = await db.get('SELECT * FROM messages WHERE id = ?', [
+      req.params.id
+    ]);
+    if (!msg) return res.status(404).json({ error: 'Message not found' });
+    await db.run('INSERT INTO replies (messageId, body) VALUES (?, ?)', [
+      req.params.id,
+      body
+    ]);
+    if (process.env.SENDGRID_API_KEY) {
+      await sgMail.send({
+        to: msg.email,
+        from: FROM_EMAIL,
+        subject: `Re: ${msg.subject}`,
+        text: body
+      });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Endpoint to check admin auth without retrieving data
-app.post('/api/admin/check', (req, res) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Basic ')) {
-    return res.status(401).json({ error: 'Auth required' });
-  }
-  const creds = Buffer.from(auth.split(' ')[1], 'base64').toString().split(':');
-  const [user, pass] = creds;
-  if (user === ADMIN_USER && pass === ADMIN_PASS) {
-    return res.json({ success: true });
-  }
-  res.status(401).json({ error: 'Auth failed' });
+app.get('/api/admin/check', basicAuth, (req, res) => {
+  res.json({ success: true });
+});
+
+app.post('/api/admin/check', basicAuth, (req, res) => {
+  res.json({ success: true });
 });
 
 // Start the server
