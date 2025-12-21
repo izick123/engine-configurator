@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <!-- Header (matches index.html) -->
   <header class="site-header">
     <div class="container header-inner">
       <a href="./" class="brand-link" aria-label="SPX Engineering Home">
@@ -27,12 +26,10 @@
     </div>
   </header>
 
-  <!-- Hero -->
   <section class="hero">
     <div class="container hero-inner">
-      <h1>Contact SPX Engineering</h1>
+      <h1>Contact</h1>
       <p>Send us a message and we’ll get back to you.</p>
-      <p class="small muted mt-6">Replies are sent from our support inbox.</p>
     </div>
   </section>
 
@@ -49,6 +46,12 @@
         <label class="small muted" for="email">Email</label>
         <input id="email" name="email" type="email" required style="width:100%; padding:10px; margin-top:6px;" />
 
+        <!-- Honeypot (hidden field; humans won't fill it) -->
+        <div style="position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;">
+          <label for="company">Company</label>
+          <input id="company" name="company" autocomplete="off" tabindex="-1" />
+        </div>
+
         <div style="height: 12px;"></div>
 
         <label class="small muted" for="message">Message</label>
@@ -62,34 +65,40 @@
     </section>
   </main>
 
-  <!-- Footer (matches index.html) -->
   <footer class="site-footer">
     <div class="container footer-inner">
       <div><strong>SPX Engineering</strong> — Hand-built racing engines.</div>
       <div class="small">Horsepower is estimated; actual horsepower may vary. For racing use only.</div>
-      <div class="small">Contact: <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a> • <a href="tel:+15555550123">(555) 555-0123</a></div>
+      <div class="small">Contact: <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a></div>
     </div>
   </footer>
 
   <script src="script.js"></script>
 
   <script>
-    // Your backend URL:
     const API_BASE = "https://spx-backend-akqu.onrender.com";
 
     async function postJSON(path, body) {
-      const res = await fetch(`${API_BASE}${path}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 20000);
 
-      const text = await res.text();
-      let data = {};
-      try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+      try {
+        const res = await fetch(`${API_BASE}${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
 
-      if (!res.ok) throw new Error(data?.error || data?.message || `Request failed (${res.status})`);
-      return data;
+        const text = await res.text();
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+
+        if (!res.ok) throw new Error(data?.error || data?.message || `Request failed (${res.status})`);
+        return data;
+      } finally {
+        clearTimeout(t);
+      }
     }
 
     const form = document.getElementById("contactForm");
@@ -97,14 +106,15 @@
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-
       statusEl.textContent = "Sending...";
+
       const name = document.getElementById("name").value.trim();
       const email = document.getElementById("email").value.trim();
       const message = document.getElementById("message").value.trim();
+      const company = document.getElementById("company").value.trim();
 
       try {
-        await postJSON("/api/messages", { name, email, message });
+        await postJSON("/api/messages", { name, email, message, company });
         statusEl.textContent = "Sent ✅";
         form.reset();
       } catch (err) {
