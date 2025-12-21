@@ -3,6 +3,7 @@ import cors from 'cors';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -14,9 +15,22 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
 
 const PORT = process.env.PORT || 3000;
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'password';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
-const FROM_EMAIL = process.env.FROM_EMAIL || ADMIN_EMAIL;
+const ADMIN_PASS = process.env.ADMIN_PASS || 'revlimit';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'spxengineering123@gmail.com';
+const GMAIL_USER = process.env.GMAIL_USER || 'spxengineering123@gmail.com';
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD || 'zzwa nfbz eigf bept';
+const FROM_EMAIL = process.env.FROM_EMAIL || GMAIL_USER || ADMIN_EMAIL;
+
+const gmailTransport =
+  GMAIL_USER && GMAIL_APP_PASSWORD
+    ? nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: GMAIL_USER,
+          pass: GMAIL_APP_PASSWORD
+        }
+      })
+    : null;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -65,6 +79,28 @@ function basicAuth(req, res, next) {
   next();
 }
 
+async function sendEmail({ to, subject, text }) {
+  if (gmailTransport) {
+    await gmailTransport.sendMail({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      text
+    });
+    return;
+  }
+  if (process.env.SENDGRID_API_KEY) {
+    await sgMail.send({
+      to,
+      from: FROM_EMAIL,
+      subject,
+      text
+    });
+    return;
+  }
+  throw new Error('Email transport not configured');
+}
+
 // Endpoint to create a new message
 app.post('/api/messages', async (req, res) => {
   const { name, email, subject, body } = req.body;
@@ -77,13 +113,14 @@ app.post('/api/messages', async (req, res) => {
       [name, email, subject, body]
     );
     // Notify admin via email if API key is configured
-    if (process.env.SENDGRID_API_KEY) {
-      await sgMail.send({
+    try {
+      await sendEmail({
         to: ADMIN_EMAIL,
-        from: FROM_EMAIL,
         subject: `New contact from ${name}: ${subject}`,
         text: `Name: ${name}\nEmail: ${email}\n\n${body}`
       });
+    } catch (emailErr) {
+      console.error(emailErr);
     }
     res.json({ success: true, id: result.lastID });
   } catch (err) {
@@ -159,18 +196,15 @@ app.post('/api/messages/:id/reply', basicAuth, async (req, res) => {
     if (!msg) return res.status(404).json({ error: 'Message not found' });
     await db.run('INSERT INTO replies (messageId, body) VALUES (?, ?)', [req.params.id, body]);
     let emailWarning = null;
-    if (process.env.SENDGRID_API_KEY) {
-      try {
-        await sgMail.send({
-          to: msg.email,
-          from: FROM_EMAIL,
-          subject: `Re: ${msg.subject}`,
-          text: body
-        });
-      } catch (emailErr) {
-        console.error(emailErr);
-        emailWarning = 'Reply stored but failed to send email';
-      }
+    try {
+      await sendEmail({
+        to: msg.email,
+        subject: `Re: ${msg.subject}`,
+        text: body
+      });
+    } catch (emailErr) {
+      console.error(emailErr);
+      emailWarning = 'Reply stored but failed to send email';
     }
     res.json({ success: true, warning: emailWarning });
   } catch (err) {
@@ -194,18 +228,15 @@ app.post('/api/messages/:id/replies', basicAuth, async (req, res) => {
       body
     ]);
     let emailWarning = null;
-    if (process.env.SENDGRID_API_KEY) {
-      try {
-        await sgMail.send({
-          to: msg.email,
-          from: FROM_EMAIL,
-          subject: `Re: ${msg.subject}`,
-          text: body
-        });
-      } catch (emailErr) {
-        console.error(emailErr);
-        emailWarning = 'Reply stored but failed to send email';
-      }
+    try {
+      await sendEmail({
+        to: msg.email,
+        subject: `Re: ${msg.subject}`,
+        text: body
+      });
+    } catch (emailErr) {
+      console.error(emailErr);
+      emailWarning = 'Reply stored but failed to send email';
     }
     res.json({ success: true, warning: emailWarning });
   } catch (err) {
