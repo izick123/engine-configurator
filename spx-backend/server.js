@@ -1,260 +1,239 @@
-import express from 'express';
-import cors from 'cors';
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
-import sgMail from '@sendgrid/mail';
-import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
+
+import sqlite3 from "sqlite3";
+import { open } from "sqlite";
 
 dotenv.config();
 
-// Configure SendGrid
-sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
-
-const PORT = process.env.PORT || 3000;
-const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'revlimit';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'spxengineering123@gmail.com';
-const GMAIL_USER = process.env.GMAIL_USER || 'spxengineering123@gmail.com';
-const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD || '';
-const FROM_EMAIL = process.env.FROM_EMAIL || GMAIL_USER || ADMIN_EMAIL;
-
-const gmailTransport =
-  GMAIL_USER && GMAIL_APP_PASSWORD
-    ? nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: GMAIL_USER,
-          pass: GMAIL_APP_PASSWORD
-        }
-      })
-    : null;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Use persistent database file if provided, otherwise local spx.db
-const dbFile = process.env.DB_FILE || join(__dirname, 'spx.db');
-
 const app = express();
-app.use(cors());
+
+// ----------------------------
+// Config
+// ----------------------------
+const PORT = Number(process.env.PORT || 10000);
+
+// Admin credentials (set in Render env vars)
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ""; // SET THIS IN RENDER
+const ADMIN_TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || crypto.randomBytes(32).toString("hex");
+
+// Email settings:
+// Prefer SMTP_* if provided, otherwise use Gmail vars.
+// (Render env vars can use either set.)
+const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const SMTP_SECURE = String(process.env.SMTP_SECURE || "false").toLowerCase() === "true";
+const SMTP_USER = process.env.SMTP_USER || process.env.GMAIL_USER || "";
+const SMTP_PASS = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || "";
+const FROM_EMAIL = process.env.SMTP_FROM || process.env.FROM_EMAIL || SMTP_USER || "no-reply@spxengineering.com";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || SMTP_USER || "";
+
+// SQLite path
+const DB_PATH = process.env.DB_PATH || "spx.db";
+
+// ----------------------------
+// Middleware
+// ----------------------------
 app.use(express.json());
 
-let db;
-(async () => {
-  db = await open({
-    filename: dbFile,
-    driver: sqlite3.Database
-  });
-  // Create tables if they don't exist
-  await db.run(`CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    email TEXT,
-    subject TEXT,
-    body TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-  await db.run(`CREATE TABLE IF NOT EXISTS replies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    messageId INTEGER,
-    body TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-})();
+// CORS: allow your site + localhost
+const allowedOrigins = [
+  "https://spxengineering.com",
+  "https://www.spxengineering.com",
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:5500",
+];
 
-// Basic HTTP Basic Auth middleware
-function basicAuth(req, res, next) {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Basic ')) {
-    return res.status(401).json({ error: 'Auth required' });
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // allow server-to-server, curl, or no-origin requests
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("CORS blocked"), false);
+    },
+  })
+);
+
+// ----------------------------
+// DB init
+// ----------------------------
+const db = await open({
+  filename: DB_PATH,
+  driver: sqlite3.Database,
+});
+
+await db.exec(`
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+`);
+
+// ----------------------------
+// Email init
+// ----------------------------
+function getTransporter() {
+  if (!SMTP_USER || !SMTP_PASS) return null;
+
+  return nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+  });
+}
+
+async function sendEmailNotification({ name, email, message }) {
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.log("Email not configured: missing SMTP_USER/SMTP_PASS (or GMAIL_USER/GMAIL_APP_PASSWORD).");
+    return { sent: false, reason: "Email not configured" };
   }
-  const creds = Buffer.from(auth.split(' ')[1], 'base64').toString().split(':');
-  const [user, pass] = creds;
-  if (user !== ADMIN_USER || pass !== ADMIN_PASS) {
-    return res.status(401).json({ error: 'Auth failed' });
+
+  const subject = `New SPX Contact Message from ${name}`;
+  const text = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}\n`;
+
+  const to = ADMIN_EMAIL || SMTP_USER;
+  if (!to) return { sent: false, reason: "No admin email configured" };
+
+  await transporter.sendMail({
+    from: FROM_EMAIL,
+    to,
+    replyTo: email,
+    subject,
+    text,
+  });
+
+  return { sent: true };
+}
+
+// ----------------------------
+// Auth helpers
+// ----------------------------
+function signAdminToken(payload) {
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = crypto
+    .createHmac("sha256", ADMIN_TOKEN_SECRET)
+    .update(`${header}.${body}`)
+    .digest("base64url");
+  return `${header}.${body}.${signature}`;
+}
+
+function verifyAdminToken(token) {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+
+  const [header, body, signature] = parts;
+  const expected = crypto
+    .createHmac("sha256", ADMIN_TOKEN_SECRET)
+    .update(`${header}.${body}`)
+    .digest("base64url");
+
+  if (signature !== expected) return null;
+
+  try {
+    return JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function requireAdmin(req, res, next) {
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const payload = token ? verifyAdminToken(token) : null;
+
+  if (!payload || payload?.role !== "admin") {
+    return res.status(401).json({ error: "Unauthorized" });
   }
   next();
 }
 
-async function sendEmail({ to, subject, text }) {
-  if (gmailTransport) {
-    await gmailTransport.sendMail({
-      from: FROM_EMAIL,
-      to,
-      subject,
-      text
-    });
-    return;
-  }
-  if (process.env.SENDGRID_API_KEY) {
-    await sgMail.send({
-      to,
-      from: FROM_EMAIL,
-      subject,
-      text
-    });
-    return;
-  }
-  throw new Error('Email transport not configured');
-}
+// ----------------------------
+// Routes
+// ----------------------------
+app.get("/health", (req, res) => {
+  res.json({ ok: true, uptime: process.uptime() });
+});
 
-// Endpoint to create a new message
-app.post('/api/messages', async (req, res) => {
-  const { name, email, subject, body } = req.body;
-  if (!name || !email || !subject || !body) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
+app.post("/api/messages", async (req, res) => {
   try {
-    const result = await db.run(
-      'INSERT INTO messages (name, email, subject, body) VALUES (?,?,?,?)',
-      [name, email, subject, body]
-    );
-    // Notify admin via email if API key is configured
-    try {
-      await sendEmail({
-        to: ADMIN_EMAIL,
-        subject: `New contact from ${name}: ${subject}`,
-        text: `Name: ${name}\nEmail: ${email}\n\n${body}`
-      });
-    } catch (emailErr) {
-      console.error(emailErr);
+    const name = String(req.body?.name || "").trim();
+    const email = String(req.body?.email || "").trim();
+    const message = String(req.body?.message || "").trim();
+
+    if (!name || !email || !message) {
+      return res.status(400).json({ error: "Missing name, email, or message." });
     }
-    res.json({ success: true, id: result.lastID });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
 
-// Endpoint to fetch all messages (admin)
-app.get('/api/messages', basicAuth, async (req, res) => {
-  try {
-    const messages = await db.all(
-      `SELECT
-        m.*,
-        m.timestamp AS created_at,
-        CASE
-          WHEN EXISTS (
-            SELECT 1
-            FROM replies r
-            WHERE r.messageId = m.id
-          ) THEN 'answered'
-          ELSE 'new'
-        END AS status
-      FROM messages m
-      ORDER BY m.id DESC`
+    const created_at = new Date().toISOString();
+
+    await db.run(
+      `INSERT INTO messages (name, email, message, created_at) VALUES (?, ?, ?, ?)`,
+      [name, email, message, created_at]
     );
-    res.json(messages);
+
+    // Send email notification (don’t block the request on email)
+    sendEmailNotification({ name, email, message })
+      .then((r) => console.log("Email result:", r))
+      .catch((e) => console.log("Email send error:", e?.message || e));
+
+    return res.json({ ok: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: "Server error saving message." });
   }
 });
 
-// Endpoint to fetch a single message and its replies (admin)
-app.get('/api/messages/:id', basicAuth, async (req, res) => {
+// Admin login (returns token)
+app.post("/api/admin/login", async (req, res) => {
+  const username = String(req.body?.username || "").trim();
+  const password = String(req.body?.password || "");
+
+  if (!ADMIN_PASSWORD) {
+    return res.status(500).json({ error: "ADMIN_PASSWORD is not set on the server." });
+  }
+
+  if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: "Invalid credentials." });
+  }
+
+  const token = signAdminToken({
+    role: "admin",
+    username,
+    iat: Date.now(),
+  });
+
+  return res.json({ ok: true, token });
+});
+
+// Admin list messages
+app.get("/api/admin/messages", requireAdmin, async (req, res) => {
   try {
-    const msg = await db.get(
-      `SELECT
-        m.*,
-        m.timestamp AS created_at,
-        CASE
-          WHEN EXISTS (
-            SELECT 1
-            FROM replies r
-            WHERE r.messageId = m.id
-          ) THEN 'answered'
-          ELSE 'new'
-        END AS status
-      FROM messages m
-      WHERE m.id = ?`,
-      [req.params.id]
-    );
-    if (!msg) return res.status(404).json({ error: 'Not found' });
-    const replies = await db.all(
-      'SELECT *, timestamp AS created_at FROM replies WHERE messageId = ?',
-      [req.params.id]
-    );
-    res.json({ message: msg, replies });
+    const rows = await db.all(`SELECT id, name, email, message, created_at FROM messages ORDER BY id DESC LIMIT 200`);
+    return res.json({ ok: true, messages: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: "Server error reading messages." });
   }
 });
 
-// Endpoint to post a reply to a message (admin)
-app.post('/api/messages/:id/reply', basicAuth, async (req, res) => {
-  const { body } = req.body;
-  if (!body) {
-    return res.status(400).json({ error: 'Reply body is required' });
-  }
-  try {
-    const msg = await db.get('SELECT * FROM messages WHERE id = ?', [req.params.id]);
-    if (!msg) return res.status(404).json({ error: 'Message not found' });
-    await db.run('INSERT INTO replies (messageId, body) VALUES (?, ?)', [req.params.id, body]);
-    let emailWarning = null;
-    try {
-      await sendEmail({
-        to: msg.email,
-        subject: `Re: ${msg.subject}`,
-        text: body
-      });
-    } catch (emailErr) {
-      console.error(emailErr);
-      emailWarning = 'Reply stored but failed to send email';
-    }
-    res.json({ success: true, warning: emailWarning });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-app.post('/api/messages/:id/replies', basicAuth, async (req, res) => {
-  const { body } = req.body;
-  if (!body) {
-    return res.status(400).json({ error: 'Reply body is required' });
-  }
-  try {
-    const msg = await db.get('SELECT * FROM messages WHERE id = ?', [
-      req.params.id
-    ]);
-    if (!msg) return res.status(404).json({ error: 'Message not found' });
-    await db.run('INSERT INTO replies (messageId, body) VALUES (?, ?)', [
-      req.params.id,
-      body
-    ]);
-    let emailWarning = null;
-    try {
-      await sendEmail({
-        to: msg.email,
-        subject: `Re: ${msg.subject}`,
-        text: body
-      });
-    } catch (emailErr) {
-      console.error(emailErr);
-      emailWarning = 'Reply stored but failed to send email';
-    }
-    res.json({ success: true, warning: emailWarning });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Endpoint to check admin auth without retrieving data
-app.get('/api/admin/check', basicAuth, (req, res) => {
-  res.json({ success: true });
-});
-
-app.post('/api/admin/check', basicAuth, (req, res) => {
-  res.json({ success: true });
-});
-
-// Start the server
+// ----------------------------
+// Start
+// ----------------------------
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`SPX backend listening on port ${PORT}`);
 });
