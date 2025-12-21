@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <!-- Header (matches index.html) -->
   <header class="site-header">
     <div class="container header-inner">
       <a href="./" class="brand-link" aria-label="SPX Engineering Home">
@@ -27,7 +26,6 @@
     </div>
   </header>
 
-  <!-- Hero -->
   <section class="hero">
     <div class="container hero-inner">
       <h1>Admin Dashboard</h1>
@@ -37,7 +35,6 @@
   </section>
 
   <main class="container" style="margin-top: 20px;">
-    <!-- Login card -->
     <section id="loginCard" class="card">
       <h2>Login</h2>
 
@@ -57,7 +54,6 @@
       </form>
     </section>
 
-    <!-- Admin card -->
     <section id="adminCard" class="card" style="display:none; margin-top: 20px;">
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
         <button id="refreshBtn" class="btn primary" type="button">Refresh</button>
@@ -69,9 +65,10 @@
         <table style="width:100%; border-collapse: collapse;">
           <thead>
             <tr style="text-align:left;">
-              <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12); width:180px;">Time</th>
+              <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12); width:170px;">Time</th>
               <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12); width:160px;">Name</th>
               <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12); width:240px;">Email</th>
+              <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12); width:110px;">Status</th>
               <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12);">Message / Reply</th>
             </tr>
           </thead>
@@ -81,12 +78,11 @@
     </section>
   </main>
 
-  <!-- Footer (matches index.html) -->
   <footer class="site-footer">
     <div class="container footer-inner">
       <div><strong>SPX Engineering</strong> — Hand-built racing engines.</div>
       <div class="small">Horsepower is estimated; actual horsepower may vary. For racing use only.</div>
-      <div class="small">Contact: <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a> • <a href="tel:+15555550123">(555) 555-0123</a></div>
+      <div class="small">Contact: <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a></div>
     </div>
   </footer>
 
@@ -107,11 +103,19 @@
       try { return new Date(ts).toLocaleString(); } catch { return ts; }
     }
 
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
     async function postJSON(path, body, token) {
       const headers = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      // Abort after 20s so UI never hangs forever
       const controller = new AbortController();
       const t = setTimeout(() => controller.abort(), 20000);
 
@@ -152,28 +156,41 @@
       adminCard.style.display = isLoggedIn ? "block" : "none";
     }
 
+    function statusBadge(m) {
+      const isReplied = (m.status === "replied") || (m.reply_count > 0);
+      const bg = isReplied ? "rgba(80,255,160,.12)" : "rgba(240,195,74,.12)";
+      const border = isReplied ? "rgba(80,255,160,.35)" : "rgba(240,195,74,.35)";
+      const text = isReplied ? `Replied (${m.reply_count})` : "New";
+      return `<span style="display:inline-block;padding:6px 10px;border-radius:999px;background:${bg};border:1px solid ${border};font-size:12px;">${text}</span>`;
+    }
+
+    async function loadReplies(messageId, token) {
+      return await getJSON(`/api/admin/replies?messageId=${encodeURIComponent(messageId)}`, token);
+    }
+
     function renderMessages(rows) {
       const tbody = document.getElementById("messagesBody");
       tbody.innerHTML = "";
 
       if (!rows || rows.length === 0) {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td style="padding:10px;" colspan="4">No messages.</td>`;
+        tr.innerHTML = `<td style="padding:10px;" colspan="5">No messages.</td>`;
         tbody.appendChild(tr);
         return;
       }
 
-      for (const r of rows) {
+      for (const m of rows) {
         const tr = document.createElement("tr");
-        const name = r.name || "";
-        const email = r.email || "";
+        const name = m.name || "";
+        const email = m.email || "";
 
         tr.innerHTML = `
-          <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">${formatDate(r.created_at)}</td>
+          <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">${formatDate(m.created_at)}</td>
           <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">${escapeHtml(name)}</td>
           <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">${escapeHtml(email)}</td>
+          <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">${statusBadge(m)}</td>
           <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">
-            <div style="white-space:pre-wrap;">${escapeHtml(r.message || "")}</div>
+            <div style="white-space:pre-wrap;">${escapeHtml(m.message || "")}</div>
 
             <div style="margin-top:12px; padding:12px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
               <div style="font-weight:700; margin-bottom:8px;">Reply → ${escapeHtml(email)}</div>
@@ -188,46 +205,77 @@
 
               <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:10px;">
                 <button type="button" class="btn primary sendReplyBtn">Send Reply</button>
+                <button type="button" class="btn viewRepliesBtn" style="border:1px solid rgba(255,255,255,.12);">View Reply History</button>
                 <span class="small muted replyStatus"></span>
               </div>
+
+              <div class="replyHistory" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.12);"></div>
             </div>
           </td>
         `;
 
+        const token = localStorage.getItem("spx_admin_token");
         const sendBtn = tr.querySelector(".sendReplyBtn");
+        const viewBtn = tr.querySelector(".viewRepliesBtn");
         const subjEl = tr.querySelector(".replySubject");
         const bodyEl = tr.querySelector(".replyBody");
         const replyStatus = tr.querySelector(".replyStatus");
+        const historyEl = tr.querySelector(".replyHistory");
 
         sendBtn.addEventListener("click", async () => {
-          const token = localStorage.getItem("spx_admin_token");
           replyStatus.textContent = "Sending...";
 
           try {
             await postJSON("/api/admin/reply", {
+              messageId: m.id,
               to: email,
               subject: subjEl.value.trim(),
               body: bodyEl.value
             }, token);
 
             replyStatus.textContent = "Sent ✅";
+            await loadMessages(); // refresh status + counts
           } catch (err) {
             console.error(err);
             replyStatus.textContent = `Error: ${err.message}`;
           }
         });
 
+        viewBtn.addEventListener("click", async () => {
+          try {
+            if (historyEl.style.display === "block") {
+              historyEl.style.display = "none";
+              historyEl.innerHTML = "";
+              return;
+            }
+
+            viewBtn.textContent = "Loading...";
+            const data = await loadReplies(m.id, token);
+
+            if (!data.replies || data.replies.length === 0) {
+              historyEl.innerHTML = `<div class="small muted">No replies yet.</div>`;
+            } else {
+              historyEl.innerHTML = data.replies.map(r => `
+                <div style="padding:10px; border:1px solid rgba(255,255,255,.10); border-radius:10px; margin-top:10px;">
+                  <div class="small muted">${escapeHtml(formatDate(r.sent_at))} • ${escapeHtml(r.to_email)}</div>
+                  <div style="font-weight:700; margin-top:6px;">${escapeHtml(r.subject)}</div>
+                  <div style="white-space:pre-wrap; margin-top:8px;">${escapeHtml(r.body)}</div>
+                </div>
+              `).join("");
+            }
+
+            historyEl.style.display = "block";
+          } catch (err) {
+            console.error(err);
+            historyEl.style.display = "block";
+            historyEl.innerHTML = `<div class="small muted">Error: ${escapeHtml(err.message)}</div>`;
+          } finally {
+            viewBtn.textContent = "View Reply History";
+          }
+        });
+
         tbody.appendChild(tr);
       }
-    }
-
-    function escapeHtml(s) {
-      return String(s)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
     }
 
     async function loadMessages() {
@@ -244,7 +292,6 @@
       }
     }
 
-    // Login
     document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       setText("loginStatus", "Logging in...");
@@ -264,7 +311,6 @@
       }
     });
 
-    // Logout
     document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.removeItem("spx_admin_token");
       showAdmin(false);
@@ -272,10 +318,8 @@
       document.getElementById("messagesBody").innerHTML = "";
     });
 
-    // Refresh
     document.getElementById("refreshBtn").addEventListener("click", loadMessages);
 
-    // Auto-load if token exists
     (async function init() {
       setText("topStatus", `API: ${API_BASE}`);
       const token = localStorage.getItem("spx_admin_token");
