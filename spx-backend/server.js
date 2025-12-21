@@ -254,8 +254,8 @@ app.post("/api/messages", rateLimit, async (req, res) => {
     const message = String(req.body?.message || "").trim();
 
     // Honeypot field (bots fill it). If present -> pretend success.
-    const company = String(req.body?.company || "").trim();
-    if (company) {
+    const website = String(req.body?.website || "").trim();
+    if (website) {
       return res.json({ ok: true });
     }
 
