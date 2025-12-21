@@ -230,6 +230,37 @@ app.get("/api/admin/messages", requireAdmin, async (req, res) => {
     return res.status(500).json({ error: "Server error reading messages." });
   }
 });
+// Admin reply to a message (send email back to the user)
+app.post("/api/admin/reply", requireAdmin, async (req, res) => {
+  try {
+    const to = String(req.body?.to || "").trim();
+    const subject = String(req.body?.subject || "").trim();
+    const body = String(req.body?.body || "").trim();
+
+    if (!to || !subject || !body) {
+      return res.status(400).json({ error: "Missing to, subject, or body." });
+    }
+
+    const transporter = getTransporter();
+    if (!transporter) {
+      return res.status(500).json({
+        error: "Email not configured on server (missing SMTP_USER/SMTP_PASS or GMAIL_USER/GMAIL_APP_PASSWORD).",
+      });
+    }
+
+    await transporter.sendMail({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      text: body,
+    });
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to send reply email." });
+  }
+});
 
 // ----------------------------
 // Start
