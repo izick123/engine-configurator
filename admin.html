@@ -2,76 +2,202 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SPX Engineering – Admin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPX Engineering - Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#111; color:#eee; padding:24px; }
+    .card { max-width: 900px; margin: 0 auto; background:#1b1b1b; padding:20px; border-radius:10px; }
+    label { display:block; margin-top:12px; }
+    input { width: 280px; padding:10px; border-radius:6px; border:1px solid #333; background:#0f0f0f; color:#eee; }
+    button { margin-top: 14px; padding:10px 16px; border:0; border-radius:6px; cursor:pointer; background:#f0c34a; color:#111; font-weight:700; }
+    #loginStatus, #status { margin-top: 10px; color:#ddd; }
+    .row { display:flex; gap:20px; flex-wrap: wrap; }
+    .hidden { display:none; }
+    table { width:100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border-bottom: 1px solid #333; padding: 10px; text-align:left; vertical-align: top; }
+    th { color:#ccc; }
+    pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; }
+    .small { font-size: 12px; color:#aaa; margin-top: 8px; }
+  </style>
 </head>
-<body class="theme-dark">
-  <header class="site-header">
-    <div class="logo">SPX Engineering – Admin</div>
-  </header>
+<body>
+  <div class="card">
+    <h1>Admin Dashboard</h1>
 
-  <main class="page admin-page">
-    <section class="admin">
-      <h1>Admin Dashboard</h1>
+    <div id="loginBox">
+      <form id="adminLoginForm">
+        <div class="row">
+          <div>
+            <label for="username">Username</label>
+            <input id="username" autocomplete="username" required />
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" required />
+          </div>
+        </div>
 
-      <!-- Login -->
-      <form id="adminLoginForm" class="card">
-        <div class="field">
-          <label for="adminUser">Username</label>
-          <input id="adminUser" type="text" required />
-        </div>
-        <div class="field">
-          <label for="adminPass">Password</label>
-          <input id="adminPass" type="password" required />
-        </div>
-        <button type="submit" class="btn primary">Log In</button>
-        <p id="adminStatus" class="small muted"></p>
+        <button type="submit">Log In</button>
+        <div id="loginStatus"></div>
+        <div class="small" id="loginDebug"></div>
       </form>
+    </div>
 
-      <!-- Dashboard (hidden until login) -->
-      <div id="adminDashboard" class="admin-dashboard hidden">
-        <div class="admin-grid">
-          <aside class="admin-sidebar">
-            <h2>Messages</h2>
-            <ul id="messageList" class="message-list"></ul>
-
-            <section class="admin-metrics card">
-              <h2>Site Metrics</h2>
-              <p class="small">
-                Local site visits (this browser): <span id="siteVisitCount">0</span>
-              </p>
-              <button id="metricsButton" class="btn secondary">
-                Load engagement metrics
-              </button>
-              <pre id="metricsOutput" class="small muted metrics-output"></pre>
-            </section>
-          </aside>
-
-          <main class="admin-main">
-            <div id="messageEmptyHint" class="small muted">
-              Select a message to view details.
-            </div>
-
-            <div id="messageDetail">
-              <div id="messageMeta" class="message-meta"></div>
-              <pre id="messageBody" class="message-body"></pre>
-
-              <div id="messageReplies" class="message-replies"></div>
-
-              <form id="replyForm" class="reply-form hidden">
-                <label for="replyText">Reply</label>
-                <textarea id="replyText" rows="4"></textarea>
-                <button type="submit" class="btn primary">Send Reply</button>
-              </form>
-            </div>
-          </main>
-        </div>
+    <div id="adminBox" class="hidden">
+      <div class="row">
+        <button id="refreshBtn" type="button">Refresh Messages</button>
+        <button id="logoutBtn" type="button">Log Out</button>
       </div>
-    </section>
-  </main>
 
-  <script src="script.js"></script>
-  <script src="messages.js"></script>
+      <div id="status"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:160px;">Time</th>
+            <th style="width:160px;">Name</th>
+            <th style="width:220px;">Email</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody id="messagesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // IMPORTANT: set this to your current Render backend URL
+    const API_BASE = "https://spx-backend-akqu.onrender.com"; // <-- CHANGE IF NEEDED
+
+    function setText(id, txt) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    }
+
+    async function postJSON(path, body, token) {
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(`${API_BASE}${path}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body)
+      });
+
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+
+      if (!res.ok) throw new Error(data?.error || data?.message || `Request failed (${res.status})`);
+      return data;
+    }
+
+    async function getJSON(path, token) {
+      const headers = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(`${API_BASE}${path}`, { headers });
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+
+      if (!res.ok) throw new Error(data?.error || data?.message || `Request failed (${res.status})`);
+      return data;
+    }
+
+    function showAdminUI(isLoggedIn) {
+      document.getElementById("loginBox").classList.toggle("hidden", isLoggedIn);
+      document.getElementById("adminBox").classList.toggle("hidden", !isLoggedIn);
+    }
+
+    function formatDate(ts) {
+      try { return new Date(ts).toLocaleString(); } catch { return ts; }
+    }
+
+    function renderMessages(rows) {
+      const tbody = document.getElementById("messagesBody");
+      tbody.innerHTML = "";
+
+      if (!rows || rows.length === 0) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="4">No messages.</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
+
+      for (const r of rows) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${formatDate(r.created_at)}</td>
+          <td>${(r.name || "").replace(/</g, "&lt;")}</td>
+          <td>${(r.email || "").replace(/</g, "&lt;")}</td>
+          <td><pre>${(r.message || "").replace(/</g, "&lt;")}</pre></td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // ---- Login ----
+    const loginForm = document.getElementById("adminLoginForm");
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setText("loginStatus", "Logging in...");
+      setText("loginDebug", "");
+
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        const data = await postJSON("/api/admin/login", { username, password });
+        localStorage.setItem("spx_admin_token", data.token);
+        setText("loginStatus", "Logged in ✅");
+        showAdminUI(true);
+        await loadMessages();
+      } catch (err) {
+        console.error(err);
+        setText("loginStatus", `Error contacting server. (${err.message})`);
+        setText("loginDebug", `Tried: ${API_BASE}/api/admin/login`);
+      }
+    });
+
+    // ---- Logout ----
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem("spx_admin_token");
+      showAdminUI(false);
+      setText("status", "");
+      renderMessages([]);
+    });
+
+    // ---- Refresh ----
+    document.getElementById("refreshBtn").addEventListener("click", loadMessages);
+
+    async function loadMessages() {
+      const token = localStorage.getItem("spx_admin_token");
+      setText("status", "Loading messages...");
+
+      try {
+        const data = await getJSON("/api/admin/messages", token);
+        renderMessages(data.messages);
+        setText("status", `Loaded ${data.messages.length} messages ✅`);
+      } catch (err) {
+        console.error(err);
+        setText("status", `Error: ${err.message}`);
+      }
+    }
+
+    // ---- On load: if token exists, try loading ----
+    (async function init() {
+      const token = localStorage.getItem("spx_admin_token");
+      if (!token) return;
+
+      showAdminUI(true);
+      try {
+        await loadMessages();
+      } catch {
+        localStorage.removeItem("spx_admin_token");
+        showAdminUI(false);
+      }
+    })();
+  </script>
 </body>
 </html>
