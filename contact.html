@@ -111,10 +111,10 @@
       const name = document.getElementById("name").value.trim();
       const email = document.getElementById("email").value.trim();
       const message = document.getElementById("message").value.trim();
-      const company = document.getElementById("company").value.trim();
+      const website = document.getElementById("company").value.trim();
 
       try {
-        await postJSON("/api/messages", { name, email, message, company });
+        await postJSON("/api/messages", { name, email, message, website });
         statusEl.textContent = "Sent ✅";
         form.reset();
       } catch (err) {
