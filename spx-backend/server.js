@@ -13,16 +13,15 @@ const app = express();
 const PORT = Number(process.env.PORT || 10000);
 
 // ----------------------------
-// Admin config (Render env vars)
+// Admin config
 // ----------------------------
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ""; // MUST be set in Render
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const ADMIN_TOKEN_SECRET =
   process.env.ADMIN_TOKEN_SECRET || crypto.randomBytes(32).toString("hex");
 
 // ----------------------------
-// Email config
-// Supports either SMTP_* OR GMAIL_* env vars
+// Email config (SMTP_* or GMAIL_*)
 // ----------------------------
 const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
 const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
@@ -31,7 +30,8 @@ const SMTP_SECURE = String(process.env.SMTP_SECURE || "false").toLowerCase() ===
 const SMTP_USER = process.env.SMTP_USER || process.env.GMAIL_USER || "";
 const SMTP_PASS = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || "";
 
-const FROM_EMAIL = process.env.SMTP_FROM || process.env.FROM_EMAIL || SMTP_USER || "no-reply@spxengineering.com";
+const FROM_EMAIL =
+  process.env.SMTP_FROM || process.env.FROM_EMAIL || SMTP_USER || "no-reply@spxengineering.com";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || SMTP_USER || "";
 
 // ----------------------------
@@ -44,7 +44,6 @@ const DB_PATH = process.env.DB_PATH || "spx.db";
 // ----------------------------
 app.use(express.json());
 
-// Allow your site + common local dev origins
 const allowedOrigins = [
   "https://spxengineering.com",
   "https://www.spxengineering.com",
@@ -82,7 +81,7 @@ await db.exec(`
 `);
 
 // ----------------------------
-// Email helper
+// Email helper (with timeouts)
 // ----------------------------
 function getTransporter() {
   if (!SMTP_USER || !SMTP_PASS) return null;
@@ -92,23 +91,31 @@ function getTransporter() {
     port: SMTP_PORT,
     secure: SMTP_SECURE,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
+
+    // IMPORTANT: prevents "sendMail" from hanging forever
+    connectionTimeout: 12_000, // ms
+    greetingTimeout: 12_000,
+    socketTimeout: 12_000,
   });
 }
 
-async function sendAdminNotification({ name, email, message }) {
+async function sendMailWithHardTimeout(mailOptions, hardMs = 15_000) {
   const transporter = getTransporter();
-  if (!transporter) {
-    console.log("Email not configured: missing SMTP_USER/SMTP_PASS (or GMAIL_USER/GMAIL_APP_PASSWORD).");
-    return;
-  }
+  if (!transporter) throw new Error("Email not configured (missing SMTP auth).");
 
+  return await Promise.race([
+    transporter.sendMail(mailOptions),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Email send timed out.")), hardMs)
+    ),
+  ]);
+}
+
+async function sendAdminNotification({ name, email, message }) {
   const to = ADMIN_EMAIL || SMTP_USER;
-  if (!to) {
-    console.log("Email not configured: missing ADMIN_EMAIL / SMTP_USER.");
-    return;
-  }
+  if (!to) return;
 
-  await transporter.sendMail({
+  await sendMailWithHardTimeout({
     from: FROM_EMAIL,
     to,
     replyTo: email,
@@ -118,7 +125,7 @@ async function sendAdminNotification({ name, email, message }) {
 }
 
 // ----------------------------
-// Token helpers (simple signed token)
+// Token helpers
 // ----------------------------
 function signAdminToken(payload) {
   const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
@@ -167,7 +174,6 @@ app.get("/health", (req, res) => {
   res.json({ ok: true, uptime: process.uptime() });
 });
 
-// Save a contact message
 app.post("/api/messages", async (req, res) => {
   try {
     const name = String(req.body?.name || "").trim();
@@ -185,10 +191,10 @@ app.post("/api/messages", async (req, res) => {
       [name, email, message, created_at]
     );
 
-    // send email notification in background
+    // Fire-and-forget email (won’t block API response)
     sendAdminNotification({ name, email, message })
-      .then(() => console.log("Admin notification email queued/sent."))
-      .catch((e) => console.log("Email send error:", e?.message || e));
+      .then(() => console.log("Admin notification sent."))
+      .catch((e) => console.log("Admin notification error:", e?.message || e));
 
     return res.json({ ok: true });
   } catch (err) {
@@ -197,7 +203,6 @@ app.post("/api/messages", async (req, res) => {
   }
 });
 
-// Admin login
 app.post("/api/admin/login", async (req, res) => {
   const username = String(req.body?.username || "").trim();
   const password = String(req.body?.password || "");
@@ -214,7 +219,6 @@ app.post("/api/admin/login", async (req, res) => {
   return res.json({ ok: true, token });
 });
 
-// Admin list messages
 app.get("/api/admin/messages", requireAdmin, async (req, res) => {
   try {
     const rows = await db.all(
@@ -227,7 +231,6 @@ app.get("/api/admin/messages", requireAdmin, async (req, res) => {
   }
 });
 
-// Admin reply to a user (send email)
 app.post("/api/admin/reply", requireAdmin, async (req, res) => {
   try {
     const to = String(req.body?.to || "").trim();
@@ -238,14 +241,7 @@ app.post("/api/admin/reply", requireAdmin, async (req, res) => {
       return res.status(400).json({ error: "Missing to, subject, or body." });
     }
 
-    const transporter = getTransporter();
-    if (!transporter) {
-      return res.status(500).json({
-        error: "Email not configured on server (missing SMTP_USER/SMTP_PASS or GMAIL_USER/GMAIL_APP_PASSWORD).",
-      });
-    }
-
-    await transporter.sendMail({
+    await sendMailWithHardTimeout({
       from: FROM_EMAIL,
       to,
       subject,
@@ -254,14 +250,11 @@ app.post("/api/admin/reply", requireAdmin, async (req, res) => {
 
     return res.json({ ok: true });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Failed to send reply email." });
+    console.error("Reply send error:", err);
+    return res.status(500).json({ error: err?.message || "Failed to send reply email." });
   }
 });
 
-// ----------------------------
-// Start
-// ----------------------------
 app.listen(PORT, () => {
   console.log(`SPX backend listening on port ${PORT}`);
 });
