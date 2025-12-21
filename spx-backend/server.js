@@ -158,16 +158,21 @@ app.post('/api/messages/:id/reply', basicAuth, async (req, res) => {
     const msg = await db.get('SELECT * FROM messages WHERE id = ?', [req.params.id]);
     if (!msg) return res.status(404).json({ error: 'Message not found' });
     await db.run('INSERT INTO replies (messageId, body) VALUES (?, ?)', [req.params.id, body]);
-    // Send email reply back to original sender if API key configured
+    let emailWarning = null;
     if (process.env.SENDGRID_API_KEY) {
-      await sgMail.send({
-        to: msg.email,
-        from: FROM_EMAIL,
-        subject: `Re: ${msg.subject}`,
-        text: body
-      });
+      try {
+        await sgMail.send({
+          to: msg.email,
+          from: FROM_EMAIL,
+          subject: `Re: ${msg.subject}`,
+          text: body
+        });
+      } catch (emailErr) {
+        console.error(emailErr);
+        emailWarning = 'Reply stored but failed to send email';
+      }
     }
-    res.json({ success: true });
+    res.json({ success: true, warning: emailWarning });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -188,15 +193,21 @@ app.post('/api/messages/:id/replies', basicAuth, async (req, res) => {
       req.params.id,
       body
     ]);
+    let emailWarning = null;
     if (process.env.SENDGRID_API_KEY) {
-      await sgMail.send({
-        to: msg.email,
-        from: FROM_EMAIL,
-        subject: `Re: ${msg.subject}`,
-        text: body
-      });
+      try {
+        await sgMail.send({
+          to: msg.email,
+          from: FROM_EMAIL,
+          subject: `Re: ${msg.subject}`,
+          text: body
+        });
+      } catch (emailErr) {
+        console.error(emailErr);
+        emailWarning = 'Reply stored but failed to send email';
+      }
     }
-    res.json({ success: true });
+    res.json({ success: true, warning: emailWarning });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
