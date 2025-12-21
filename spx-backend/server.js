@@ -18,7 +18,7 @@ const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS || 'revlimit';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'spxengineering123@gmail.com';
 const GMAIL_USER = process.env.GMAIL_USER || 'spxengineering123@gmail.com';
-const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD || 'zzwa nfbz eigf bept';
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || GMAIL_USER || ADMIN_EMAIL;
 
 const gmailTransport =
