@@ -2,116 +2,82 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Contact — SPX Engineering</title>
-  <link rel="stylesheet" href="style.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPX Engineering - Contact</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#111; color:#eee; padding: 24px; }
+    .card { max-width: 600px; margin: 0 auto; background:#1b1b1b; padding: 20px; border-radius: 10px; }
+    label { display:block; margin-top: 12px; }
+    input, textarea { width:100%; padding:10px; border-radius:6px; border:1px solid #333; background:#0f0f0f; color:#eee; }
+    button { margin-top: 14px; padding:10px 16px; border:0; border-radius:6px; cursor:pointer; background:#f0c34a; color:#111; font-weight:700; }
+    #status { margin-top: 12px; color:#ddd; }
+    .small { font-size: 12px; color:#aaa; margin-top: 8px; }
+  </style>
 </head>
 <body>
-   <!-- Header -->
-  <header class="site-header">
-    <div class="container header-inner">
-      <a href="./" class="brand-link" aria-label="SPX Engineering Home">
-        <img src="logo.png" alt="SPX Engineering" class="logo">
-      </a>
-      <nav class="nav">
-        <a href="./">Home</a>
-        <a href="builder.html">Builder</a>
-        <a href="faq.html">FAQ</a>
-        <a href="contact.html" aria-current="page">Contact</a>
-        <a href="about.html">About Us</a>
-        <a href="admin.html">Admin</a>
-      </nav>
-      <!-- Theme toggle button -->
-      <button id="themeToggle" class="icon-btn" aria-label="Toggle dark mode">
-        🌓
-      </button>
-    </div>
-  </header>
+  <div class="card">
+    <h1>Contact SPX Engineering</h1>
 
+    <form id="contactForm">
+      <label for="name">Name</label>
+      <input id="name" name="name" autocomplete="name" required />
 
-  <!-- Main -->
-  <main class="page contact-page">
-    <div class="container">
-      <section class="card">
-        <h1>Contact SPX Engineering</h1>
-        <p>
-          Have a question about a build, parts combo, or what it would take to
-          hit a certain horsepower number? Drop a message below and we'll get
-          back to you.
-        </p>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required />
 
-        <p class="small muted">
-          Include as much detail as you can: engine size, current mods,
-          intended use, and anything else that helps us give you a useful answer.
-        </p>
+      <label for="message">Message</label>
+      <textarea id="message" name="message" rows="6" required></textarea>
 
-        <form id="contactForm" class="stack" autocomplete="on">
-          <label>
-            Name
-            <input type="text" id="name" name="name" required placeholder="Your name" />
-          </label>
+      <button type="submit">Send</button>
+      <div id="status"></div>
+      <div class="small" id="debug"></div>
+    </form>
+  </div>
 
-          <label>
-            Email
-            <input type="email" id="email" name="email" required placeholder="you@example.com" />
-          </label>
+  <script>
+    // IMPORTANT: set this to your current Render backend URL
+    const API_BASE = "https://spx-backend-akqu.onrender.com"; // <-- CHANGE IF NEEDED
 
-          <label>
-            Message
-            <textarea
-              id="message"
-              name="message"
-              rows="5"
-              required
-              placeholder="Tell us what you're working on..."
-            ></textarea>
-          </label>
+    async function postJSON(path, body) {
+      const res = await fetch(`${API_BASE}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
 
-          <p id="contactStatus" class="small muted" aria-live="polite"></p>
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
 
-          <button type="submit" class="btn primary">Send Message</button>
-        </form>
-      </section>
+      if (!res.ok) {
+        throw new Error(data?.error || data?.message || `Request failed (${res.status})`);
+      }
+      return data;
+    }
 
-      <section class="card secondary">
-        <h2>Other ways to reach us</h2>
-        <ul class="contact-list">
-          <li>
-            <strong>Email:</strong>
-            <a href="mailto:spxengineering123@gmail.com">
-              spxengineering123@gmail.com
-            </a>
-          </li>
-          <li>
-            <strong>Instagram:</strong>
-            <span>@spxengineering</span>
-          </li>
-          <li>
-            <strong>Location:</strong>
-            North woods of Wisconsin (testing grounds)
-          </li>
-        </ul>
-      </section>
-    </div>
-  </main>
+    const form = document.getElementById("contactForm");
+    const statusEl = document.getElementById("status");
+    const debugEl = document.getElementById("debug");
 
-  <!-- Footer -->
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <div><strong>SPX Engineering</strong> — Hand-built racing engines.</div>
-      <div class="small">
-        Horsepower is estimated; actual horsepower may vary. For racing use only.
-      </div>
-      <div class="small">
-        Contact:
-        <a href="mailto:spxengineering123@gmail.com">spxengineering123@gmail.com</a>
-        •
-        <a href="tel:+15555550123">(555) 555-0123</a>
-      </div>
-    </div>
-  </footer>
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusEl.textContent = "Sending...";
+      debugEl.textContent = "";
 
-  <script src="script.js"></script>
-  <script src="messages.js"></script>
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const message = document.getElementById("message").value.trim();
+
+      try {
+        await postJSON("/api/messages", { name, email, message });
+        statusEl.textContent = "Sent ✅";
+        form.reset();
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = `Error: ${err.message}`;
+        debugEl.textContent = `Tried: ${API_BASE}/api/messages`;
+      }
+    });
+  </script>
 </body>
 </html>
