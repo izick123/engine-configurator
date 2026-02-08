@@ -50,19 +50,13 @@ function updateBuild() {
   const base = document.getElementById("engineBase");
   if (!base) return;
 
-  let totalPrice = +base.selectedOptions[0].dataset.price || 0;
   let totalHp = +base.selectedOptions[0].dataset.hp || 0;
 
   document.querySelectorAll(".upgrade").forEach((up) => {
-    if (up.checked) {
-      totalPrice += +up.dataset.price || 0;
-      totalHp += +up.dataset.hp || 0;
-    }
+    if (up.checked) totalHp += +up.dataset.hp || 0;
   });
 
-  const priceEl = document.getElementById("totalPrice");
   const hpEl = document.getElementById("totalHp");
-  if (priceEl) priceEl.textContent = totalPrice;
   if (hpEl) hpEl.textContent = totalHp;
 
   const progress = document.getElementById("hpProgress");
@@ -113,9 +107,36 @@ function updateSummaryList() {
   });
 }
 
+
+function enforceCamRequirements(changedInput) {
+  const selectedCam = document.querySelector('input[name="cam"]:checked');
+  const requiredSpring = selectedCam?.dataset?.requiresSpring;
+  if (!requiredSpring) return;
+
+  const selectedSpring = document.querySelector('input[name="valvetrain"]:checked');
+  if (selectedSpring?.dataset?.springLb === requiredSpring) return;
+
+  const requiredOption = document.querySelector(`input[name="valvetrain"][data-spring-lb="${requiredSpring}"]`);
+  if (requiredOption) {
+    requiredOption.checked = true;
+    if (changedInput && changedInput.name === "cam") {
+      alert(`${selectedCam.parentElement.textContent.trim()} requires ${requiredSpring}lb valve springs. Switched valve train automatically.`);
+    }
+  }
+}
+
+function applyCcFromQuery(base) {
+  const cc = new URLSearchParams(window.location.search).get("cc");
+  if (!cc) return;
+  const option = Array.from(base.options).find((opt) => opt.value === cc);
+  if (option) base.value = cc;
+}
+
 function initBuilder() {
   const base = document.getElementById("engineBase");
   if (!base) return;
+
+  applyCcFromQuery(base);
 
   base.addEventListener("change", () => {
     updateBuild();
@@ -124,10 +145,13 @@ function initBuilder() {
 
   document.querySelectorAll(".upgrade").forEach((up) =>
     up.addEventListener("change", () => {
+      enforceCamRequirements(up);
       updateBuild();
       incMetric("builder");
     })
   );
+
+  enforceCamRequirements();
 
   updateBuild();
 }
