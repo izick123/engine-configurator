@@ -31,82 +31,76 @@
   <main class="container">
     <section class="builder card">
       <h1>Custom Racing Engine Builder</h1>
-      <p>Select a base and choose components by section. Price &amp; estimated HP update live.</p>
+      <p>Select a base and choose components by section. Estimated HP updates live as you configure your build.</p>
 
       <h2>Base Engine</h2>
       <select id="engineBase" aria-label="Select base engine">
-        <option value="198" data-price="600" data-hp="8">198cc — $600 (8 hp)</option>
-        <option value="212" data-price="750" data-hp="9">212cc — $750 (9 hp)</option>
-        <option value="224" data-price="900" data-hp="10">224cc — $900 (10 hp)</option>
+        <option value="196" data-price="600" data-hp="8">196cc (8 hp)</option>
+        <option value="212" data-price="750" data-hp="9">212cc (9 hp)</option>
+        <option value="224" data-price="900" data-hp="10">224cc (10 hp)</option>
       </select>
 
-      <!-- Carburetors -->
+            <!-- Carburetors -->
       <div class="section">
         <h3>Carburetion</h3>
         <label class="check"><input type="radio" name="carb" class="upgrade" data-group="carb" data-price="0" data-hp="0" checked> Stock Carb (included)</label>
-        <label class="check"><input type="radio" name="carb" class="upgrade" data-group="carb" data-price="75" data-hp="1"> Tillotson 196 Performance Carb (+$75, +1 hp)</label>
-        <label class="check"><input type="radio" name="carb" class="upgrade" data-group="carb" data-price="120" data-hp="2"> Mikuni 22mm Flat Slide (+$120, +2 hp)</label>
-        <label class="check"><input type="radio" name="carb" class="upgrade" data-group="carb" data-price="185" data-hp="2"> 28mm PWK Racing Carb (+$185, +2 hp)</label>
-        <label class="check"><input type="radio" name="carb" class="upgrade" data-group="carb" data-price="320" data-hp="3"> 34mm Flat Slide Kit (+$320, +3 hp)</label>
-        <label class="check"><input type="radio" name="carb" class="upgrade" data-group="carb" data-price="600" data-hp="3"> EFI Conversion Kit (+$600, +3 hp)</label>
+        <label class="check"><input type="radio" name="carb" class="upgrade" data-group="carb" data-price="120" data-hp="2"> 22mm Mikuni (+2 hp)</label>
+        <label class="check"><input type="radio" name="carb" class="upgrade" data-group="carb" data-price="150" data-hp="2"> 24mm Mikuni (+2 hp)</label>
+        <label class="check"><input type="radio" name="carb" class="upgrade" data-group="carb" data-price="95" data-hp="1"> PZ22 (+1 hp)</label>
+        <label class="check"><input type="radio" name="carb" class="upgrade" data-group="carb" data-price="140" data-hp="2"> Nibbi PE (+2 hp)</label>
       </div>
 
-      <!-- Intake -->
+<!-- Intake -->
       <div class="section">
         <h3>Intake</h3>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="intake" data-price="50" data-hp="1"> High-Flow Intake (+$50, +1 hp)</label>
+        <label class="check"><input type="checkbox" class="upgrade" data-group="intake" data-price="50" data-hp="1"> Warhead TM Head (+1 hp)</label>
       </div>
 
-      <!-- Exhaust -->
+            <!-- Exhaust -->
       <div class="section">
         <h3>Exhaust</h3>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="exhaust" data-price="60" data-hp="1"> Straight Pipe Header (+$60, +1 hp)</label>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="exhaust" data-price="150" data-hp="2"> Tuned Header (+$150, +2 hp)</label>
+        <label class="check"><input type="radio" name="exhaust" class="upgrade" data-group="exhaust" data-price="0" data-hp="0" checked> Stock Exhaust (included)</label>
+        <label class="check"><input type="radio" name="exhaust" class="upgrade" data-group="exhaust" data-price="120" data-hp="1"> SPX Exhaust — Black (+1 hp)</label>
+        <label class="check"><input type="radio" name="exhaust" class="upgrade" data-group="exhaust" data-price="120" data-hp="1"> SPX Exhaust — Chrome (+1 hp)</label>
       </div>
 
-      <!-- Internals -->
+<!-- Internals -->
       <div class="section">
         <h3>Internals</h3>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="120" data-hp="0"> Forged Piston (+$120)</label>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="100" data-hp="0"> Billet Rod (+$100)</label>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="150" data-hp="0"> Billet Flywheel (+$150)</label>
+        <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="120" data-hp="0"> Forged Piston</label>
+        <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="100" data-hp="0"> Billet Rod</label>
+        <label class="check"><input type="checkbox" class="upgrade" data-group="internals" data-price="150" data-hp="0"> Billet Flywheel</label>
       </div>
 
-      <!-- Camshaft -->
+            <!-- Camshaft -->
       <div class="section">
         <h3>Camshaft</h3>
         <label class="check"><input type="radio" name="cam" class="upgrade" data-group="cam" data-price="0" data-hp="0" checked> Stock Cam (included)</label>
-        <label class="check"><input type="radio" name="cam" class="upgrade" data-group="cam" data-price="60" data-hp="2"> Mid-Range Torque Cam (+$60, +2 hp)</label>
-        <label class="check"><input type="radio" name="cam" class="upgrade" data-group="cam" data-price="80" data-hp="3"> Aggressive Race Cam (+$80, +3 hp)</label>
-        <label class="check"><input type="radio" name="cam" class="upgrade" data-group="cam" data-price="120" data-hp="4"> Ultra-Light Billet Cam (+$120, +4 hp)</label>
-      </div>
-
-      <!-- Cylinder Head -->
-      <div class="section">
-        <h3>Cylinder Head</h3>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="head" data-price="250" data-hp="3"> Ported Head (+$250, +3 hp)</label>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="head" data-price="400" data-hp="4"> CNC Race Head (+$400, +4 hp)</label>
+        <label class="check"><input type="radio" name="cam" class="upgrade" data-group="cam" data-price="80" data-hp="2"> Hot .265 Cam (+2 hp)</label>
+        <label class="check"><input type="radio" name="cam" class="upgrade" data-group="cam" data-price="80" data-hp="2"> Fire .265 Cam (+2 hp)</label>
+        <label class="check"><input type="radio" name="cam" class="upgrade" data-group="cam" data-price="95" data-hp="3" data-requires-spring="26"> NR .280 Cam (+3 hp, requires 26lb springs)</label>
+        <label class="check"><input type="radio" name="cam" class="upgrade" data-group="cam" data-price="110" data-hp="4" data-requires-spring="26"> GPS .308 Cam (+4 hp, requires 26lb springs)</label>
       </div>
 
       <!-- Valve Train -->
       <div class="section">
         <h3>Valve Train</h3>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="valvetrain" data-price="35" data-hp="0"> Upgraded Springs (Single) (+$35)</label>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="valvetrain" data-price="80" data-hp="0"> Dual Valve Springs (+$80)</label>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="valvetrain" data-price="110" data-hp="1"> Titanium Retainers (+$110, +1 hp)</label>
+        <label class="check"><input type="radio" name="valvetrain" class="upgrade" data-group="valvetrain" data-price="0" data-hp="0" checked> Stock Valve Springs (included)</label>
+        <label class="check"><input type="radio" name="valvetrain" class="upgrade" data-group="valvetrain" data-price="35" data-hp="0" data-spring-lb="18"> 18lb Springs</label>
+        <label class="check"><input type="radio" name="valvetrain" class="upgrade" data-group="valvetrain" data-price="45" data-hp="0" data-spring-lb="22"> 22lb Springs</label>
+        <label class="check"><input type="radio" name="valvetrain" class="upgrade" data-group="valvetrain" data-price="65" data-hp="0" data-spring-lb="26"> 26lb Springs</label>
+        <label class="check"><input type="radio" name="valvetrain" class="upgrade" data-group="valvetrain" data-price="120" data-hp="1" data-spring-lb="10000"> 10k Dual</label>
       </div>
 
-      <!-- Special -->
+<!-- Special -->
       <div class="section">
         <h3>Special</h3>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="special" data-price="60" data-hp="0"> Ceramic-Coated Piston (+$60)</label>
-        <label class="check"><input type="checkbox" class="upgrade" data-group="special" data-price="100" data-hp="0"> Dyno Sheet (+$100)</label>
+                <label class="check"><input type="checkbox" class="upgrade" data-group="special" data-price="100" data-hp="0"> Dyno Sheet</label>
       </div>
 
       <h2>Your Build</h2>
       <div id="results" class="results" aria-live="polite">
-        <p><strong>Total Price:</strong> $<span id="totalPrice">0</span></p>
-        <p>
+                <p>
           <strong>Estimated Horsepower:</strong>
           <span id="totalHp">0</span> hp
           <span class="hp-disclaimer">(*estimate; actual horsepower may vary)</span>
