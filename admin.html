@@ -29,15 +29,13 @@
   <section class="hero">
     <div class="container hero-inner">
       <h1>Admin Dashboard</h1>
-      <p>Log in to view messages and reply.</p>
-      <p id="topStatus" class="small muted mt-6"></p>
+      <p>Internal access for account controls only.</p>
     </div>
   </section>
 
   <main class="container" style="margin-top: 20px;">
     <section id="loginCard" class="card">
       <h2>Login</h2>
-
       <form id="adminLoginForm" style="margin-top: 12px;">
         <label class="small muted" for="username">Username</label>
         <input id="username" autocomplete="username" required style="width:100%; padding:10px; margin-top:6px;" />
@@ -56,25 +54,9 @@
 
     <section id="adminCard" class="card" style="display:none; margin-top: 20px;">
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-        <button id="refreshBtn" class="btn primary" type="button">Refresh</button>
         <button id="logoutBtn" class="btn" type="button" style="border:1px solid rgba(255,255,255,.12);">Log Out</button>
-        <span id="status" class="small muted"></span>
       </div>
-
-      <div style="overflow:auto; margin-top: 14px;">
-        <table style="width:100%; border-collapse: collapse;">
-          <thead>
-            <tr style="text-align:left;">
-              <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12); width:170px;">Time</th>
-              <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12); width:160px;">Name</th>
-              <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12); width:240px;">Email</th>
-              <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12); width:110px;">Status</th>
-              <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,.12);">Message / Reply</th>
-            </tr>
-          </thead>
-          <tbody id="messagesBody"></tbody>
-        </table>
-      </div>
+      <p class="small muted" style="margin-top: 12px;">Email send/receive tools have been removed from this admin panel.</p>
     </section>
   </main>
 
@@ -87,10 +69,8 @@
   </footer>
 
   <script src="script.js"></script>
-
+  <script src="messages.js"></script>
   <script>
-    const API_BASE = "https://spx-backend-akqu.onrender.com";
-
     const loginCard = document.getElementById("loginCard");
     const adminCard = document.getElementById("adminCard");
 
@@ -99,197 +79,9 @@
       if (el) el.textContent = txt;
     }
 
-    function formatDate(ts) {
-      try { return new Date(ts).toLocaleString(); } catch { return ts; }
-    }
-
-    function escapeHtml(s) {
-      return String(s)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    async function postJSON(path, body, token) {
-      const headers = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), 20000);
-
-      try {
-        const res = await fetch(`${API_BASE}${path}`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        });
-
-        const text = await res.text();
-        let data = {};
-        try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
-
-        if (!res.ok) throw new Error(data?.error || data?.message || `Request failed (${res.status})`);
-        return data;
-      } finally {
-        clearTimeout(t);
-      }
-    }
-
-    async function getJSON(path, token) {
-      const headers = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const res = await fetch(`${API_BASE}${path}`, { headers });
-      const text = await res.text();
-      let data = {};
-      try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
-
-      if (!res.ok) throw new Error(data?.error || data?.message || `Request failed (${res.status})`);
-      return data;
-    }
-
     function showAdmin(isLoggedIn) {
       loginCard.style.display = isLoggedIn ? "none" : "block";
       adminCard.style.display = isLoggedIn ? "block" : "none";
-    }
-
-    function statusBadge(m) {
-      const isReplied = (m.status === "replied") || (m.reply_count > 0);
-      const bg = isReplied ? "rgba(80,255,160,.12)" : "rgba(240,195,74,.12)";
-      const border = isReplied ? "rgba(80,255,160,.35)" : "rgba(240,195,74,.35)";
-      const text = isReplied ? `Replied (${m.reply_count})` : "New";
-      return `<span style="display:inline-block;padding:6px 10px;border-radius:999px;background:${bg};border:1px solid ${border};font-size:12px;">${text}</span>`;
-    }
-
-    async function loadReplies(messageId, token) {
-      return await getJSON(`/api/admin/replies?messageId=${encodeURIComponent(messageId)}`, token);
-    }
-
-    function renderMessages(rows) {
-      const tbody = document.getElementById("messagesBody");
-      tbody.innerHTML = "";
-
-      if (!rows || rows.length === 0) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td style="padding:10px;" colspan="5">No messages.</td>`;
-        tbody.appendChild(tr);
-        return;
-      }
-
-      for (const m of rows) {
-        const tr = document.createElement("tr");
-        const name = m.name || "";
-        const email = m.email || "";
-
-        tr.innerHTML = `
-          <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">${formatDate(m.created_at)}</td>
-          <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">${escapeHtml(name)}</td>
-          <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">${escapeHtml(email)}</td>
-          <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">${statusBadge(m)}</td>
-          <td style="padding:10px; border-bottom:1px solid rgba(255,255,255,.08);">
-            <div style="white-space:pre-wrap;">${escapeHtml(m.message || "")}</div>
-
-            <div style="margin-top:12px; padding:12px; border:1px solid rgba(255,255,255,.12); border-radius:12px;">
-              <div style="font-weight:700; margin-bottom:8px;">Reply → ${escapeHtml(email)}</div>
-
-              <label class="small muted">Subject</label>
-              <input class="replySubject" style="width:100%; padding:10px; margin-top:6px;" value="Re: SPX Engineering" />
-
-              <div style="height:10px;"></div>
-
-              <label class="small muted">Message</label>
-              <textarea class="replyBody" rows="5" style="width:100%; padding:10px; margin-top:6px;">Hi ${name || "there"},\n\n</textarea>
-
-              <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:10px;">
-                <button type="button" class="btn primary sendReplyBtn">Send Reply</button>
-                <button type="button" class="btn viewRepliesBtn" style="border:1px solid rgba(255,255,255,.12);">View Reply History</button>
-                <span class="small muted replyStatus"></span>
-              </div>
-
-              <div class="replyHistory" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.12);"></div>
-            </div>
-          </td>
-        `;
-
-        const token = localStorage.getItem("spx_admin_token");
-        const sendBtn = tr.querySelector(".sendReplyBtn");
-        const viewBtn = tr.querySelector(".viewRepliesBtn");
-        const subjEl = tr.querySelector(".replySubject");
-        const bodyEl = tr.querySelector(".replyBody");
-        const replyStatus = tr.querySelector(".replyStatus");
-        const historyEl = tr.querySelector(".replyHistory");
-
-        sendBtn.addEventListener("click", async () => {
-          replyStatus.textContent = "Sending...";
-
-          try {
-            await postJSON("/api/admin/reply", {
-              messageId: m.id,
-              to: email,
-              subject: subjEl.value.trim(),
-              body: bodyEl.value
-            }, token);
-
-            replyStatus.textContent = "Sent ✅";
-            await loadMessages(); // refresh status + counts
-          } catch (err) {
-            console.error(err);
-            replyStatus.textContent = `Error: ${err.message}`;
-          }
-        });
-
-        viewBtn.addEventListener("click", async () => {
-          try {
-            if (historyEl.style.display === "block") {
-              historyEl.style.display = "none";
-              historyEl.innerHTML = "";
-              return;
-            }
-
-            viewBtn.textContent = "Loading...";
-            const data = await loadReplies(m.id, token);
-
-            if (!data.replies || data.replies.length === 0) {
-              historyEl.innerHTML = `<div class="small muted">No replies yet.</div>`;
-            } else {
-              historyEl.innerHTML = data.replies.map(r => `
-                <div style="padding:10px; border:1px solid rgba(255,255,255,.10); border-radius:10px; margin-top:10px;">
-                  <div class="small muted">${escapeHtml(formatDate(r.sent_at))} • ${escapeHtml(r.to_email)}</div>
-                  <div style="font-weight:700; margin-top:6px;">${escapeHtml(r.subject)}</div>
-                  <div style="white-space:pre-wrap; margin-top:8px;">${escapeHtml(r.body)}</div>
-                </div>
-              `).join("");
-            }
-
-            historyEl.style.display = "block";
-          } catch (err) {
-            console.error(err);
-            historyEl.style.display = "block";
-            historyEl.innerHTML = `<div class="small muted">Error: ${escapeHtml(err.message)}</div>`;
-          } finally {
-            viewBtn.textContent = "View Reply History";
-          }
-        });
-
-        tbody.appendChild(tr);
-      }
-    }
-
-    async function loadMessages() {
-      const token = localStorage.getItem("spx_admin_token");
-      setText("status", "Loading messages...");
-
-      try {
-        const data = await getJSON("/api/admin/messages", token);
-        renderMessages(data.messages);
-        setText("status", `Loaded ${data.messages.length} messages ✅`);
-      } catch (err) {
-        console.error(err);
-        setText("status", `Error: ${err.message}`);
-      }
     }
 
     document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
@@ -300,13 +92,20 @@
       const password = document.getElementById("password").value;
 
       try {
-        const data = await postJSON("/api/admin/login", { username, password });
+        const API_BASE = "https://spx-backend-akqu.onrender.com";
+        const res = await fetch(`${API_BASE}/api/admin/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Login failed");
+
         localStorage.setItem("spx_admin_token", data.token);
         setText("loginStatus", "Logged in ✅");
         showAdmin(true);
-        await loadMessages();
       } catch (err) {
-        console.error(err);
         setText("loginStatus", `Error: ${err.message}`);
       }
     });
@@ -314,25 +113,9 @@
     document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.removeItem("spx_admin_token");
       showAdmin(false);
-      setText("status", "");
-      document.getElementById("messagesBody").innerHTML = "";
     });
 
-    document.getElementById("refreshBtn").addEventListener("click", loadMessages);
-
-    (async function init() {
-      setText("topStatus", `API: ${API_BASE}`);
-      const token = localStorage.getItem("spx_admin_token");
-      if (!token) return;
-
-      showAdmin(true);
-      try {
-        await loadMessages();
-      } catch {
-        localStorage.removeItem("spx_admin_token");
-        showAdmin(false);
-      }
-    })();
+    showAdmin(Boolean(localStorage.getItem("spx_admin_token")));
   </script>
 </body>
 </html>
